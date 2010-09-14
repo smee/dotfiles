@@ -1,0 +1,13 @@
+[core]
+	editor = /bin/vim
+	autocrlf = false
+	fileMode = false
+[user]
+	name = Steffen Dienst
+	email = sdienst@informatik.uni-leipzig.de
+	signingkey = 851C9D55
+[color]
+	branch = auto
+	diff = auto
+	status = auto
+	interactive = auto
