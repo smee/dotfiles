@@ -27,33 +27,10 @@ alias gitlogsmall='git log --graph --abbrev-commit --pretty=oneline --decorate'
 alias mvnjr='mvn org.zeroturnaround:javarebel-maven-plugin:generate'
 alias deploy='mvn clean org.zeroturnaround:javarebel-maven-plugin:generate install -PdeployTomcat -Dtomcat.path=d:/tomcat-5.5.27/'
 
-__git_ps1 ()
-{
-  local b="$(git symbolic-ref HEAD 2>/dev/null)"
-  if [ -n "$b" ]; then echo "(${b##refs/heads/})"; fi
-}
-export -f __git_ps1
-PS1='\[\033[01;32m\]\u\[\033[01;34m\] \w\[\033[31m\]$(__git_ps1 " (%s)")\[\033[01;34m\]$\[\033[00m\] ' 
-export PS
+export PS1='\[\e[0;37m\](\d \t) \[\e[0;32m\]\u@\[\e[1;33m\]\h \[\e[1;36m\]\w \n\$ \[\e[00m\]'
 
-EDITOR=/bin/vim
-export EDITOR
-########################################
-#http://blog.infinitered.com/entries/show/4
-#save foo .... remember current directory as 'foo'
-# cd foo   .... change to previously remembered directory 'foo'
-# show    ..... show known directory aliases
-#if [ ! -f ~/.dirs ]; then  # if doesn't exist, create it
-#	touch ~/.dirs
-#fi
-#
-#alias show='cat ~/.dirs'
-#save (){
-#	command sed "/!$/d" ~/.dirs > ~/.dirs1; \mv ~/.dirs1 ~/.dirs; echo "$@"=\"`pwd`\" >> ~/.dirs; source ~/.dirs ; 
-#}
-#source ~/.dirs  # Initialization for the above 'save' facility: source the .sdirs file
-#shopt -s cdable_vars # set the bash option so that no '$' is required when using the above facility
-########################################
+export EDITOR=/bin/vim
+
 export HISTCONTROL=ignoreboth # Ignores dupes in the history
 shopt -s checkwinsize # After each command, checks the windows size and changes lines and columns
 
@@ -99,10 +76,9 @@ export PROMPT_COMMAND='history -a'
 shopt -s cdspell
 ###########################3
 # CDPATH
-CDPATH='.:~'
+CDPATH='.'
 source ~/bin/j.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
-export LAUNCH4J_HOME=d:/temp/launch4j
 export JDK6_HOME=d:/Java/jdk1.6/
 export PATH=~/bin:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
