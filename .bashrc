@@ -10,7 +10,7 @@ alias webshare='python -c "import SimpleHTTPServer;SimpleHTTPServer.test()"'
 #GIT
 alias gd='git diff --ignore-space-at-eol'
 alias gs='git status'
-alias ga='git add .'
+alias ga='git add'
 alias pull='git pull'
 alias push='git push'
 alias gc='git commit'
@@ -18,6 +18,7 @@ alias gca='git commit -a'
 alias gp='git push origin && git push github'
 alias gap='git add --interactive'
 alias gl='git log --oneline --decorate'
+alias gk='gitk --all'
 
 # GIT SVN
 alias svnpull='git svn rebase'
