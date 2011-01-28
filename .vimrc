@@ -79,5 +79,5 @@ set wildmode=list:full
 
 " VimClojure settings
 let vimclojure#ParenRainbow = 1
-let vimclojure#WantNailgun = 1
+let vimclojure#WantNailgun = 0
 let vimclojure#NailgunClient = '/home/dienst/clojure/vimclojure-nailgun-client/ng.exe'
