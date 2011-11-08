@@ -5,3 +5,5 @@ hardstatus alwayslastline "%{b kw}%H %{r}%1` %{w}| %{g}%c %{w}| %{y}%d.%m.%Y %{w
 
 # Default screens
 screen -t shell1	0
+defscrollback 5000
+shell /bin/bash
