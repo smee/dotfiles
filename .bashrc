@@ -81,7 +81,7 @@ CDPATH='.'
 source ~/bin/j.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
 export JDK6_HOME=d:/Java/jdk1.6/
-export PATH=~/bin:$PATH
+export PATH=~/bin:~/dotfiles/scripts:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
 export HISTIGNORE="&:ls:[bf]g:exit:[ \t]*:j "
 export HISTFILESIZE=100000

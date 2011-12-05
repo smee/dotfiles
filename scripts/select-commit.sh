@@ -1,0 +1,1 @@
+#!/bin/bashNULL="_"for f in `svn st|grep -v ^\?|sed s/.\ *//`; do LIST="${LIST} $f $NULL on"; donedialog --checklist "Select files to commit" 30 60 30 $LIST 2>/tmp/svnlist.txtsvn ci `cat /tmp/svnlist.txt|sed 's/"//g'`
