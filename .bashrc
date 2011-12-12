@@ -78,7 +78,7 @@ shopt -s cdspell
 ###########################3
 # CDPATH
 CDPATH='.'
-source ~/bin/j.sh
+source ~/dotfiles/scripts/j.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
 export JDK6_HOME=d:/Java/jdk1.6/
 export PATH=~/bin:~/dotfiles/scripts:$PATH
