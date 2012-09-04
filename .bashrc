@@ -8,7 +8,8 @@ alias ...='cd .. ; cd ..'
 alias webshare='python -c "import SimpleHTTPServer;SimpleHTTPServer.test()"'
 
 #GIT
-alias gd='git diff --ignore-space-at-eol'
+alias g='git'
+alias gd='git diff --ignore-space-at-eol --word-diff'
 alias gs='git status'
 alias ga='git add'
 alias pull='git pull'
@@ -81,11 +82,11 @@ CDPATH='.'
 source ~/dotfiles/scripts/j.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
 export JDK6_HOME=d:/Java/jdk1.6/
-export PATH=~/bin:~/dotfiles/scripts:$PATH
+export PATH=~/bin:~/scripts:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
-export HISTIGNORE="&:ls:[bf]g:exit:[ \t]*:j "
+export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j "
 export HISTFILESIZE=100000
-export HISTSIZE=10000
+export HISTSIZE=100000
 #export http_proxy=localhost:3128
 
 ################################
@@ -166,3 +167,5 @@ _mvn() {
 }
 
 complete -F _mvn mvn
+export DISPLAY=:0.0
+export TERM=xterm-256color

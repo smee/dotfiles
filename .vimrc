@@ -55,15 +55,6 @@ map <C-l> <C-w>l
 " use !!w for writing root owned file when editing as normal user
 cmap w!! w !sudo tee % >/dev/null
 
-" NerdTree settings
-nmap ,n :NERDTreeClose<CR>:NERDTreeToggle<CR>
-nmap ,m :NERDTreeClose<CR>:NERDTreeFind<CR>
-nmap ,N :NERDTreeClose<CR>
-" quit nerdtree on file open
-let NERDTreeQuitOnOpen=1
-" highlight current line
-let NERDTreeHighlightCursorline=1
-
 syntax on
 filetype plugin indent on " enable plugins on file extensions
 set mouse=a "enable mouse?
@@ -81,3 +72,6 @@ set wildmode=list:full
 let vimclojure#ParenRainbow = 1
 let vimclojure#WantNailgun = 0
 let vimclojure#NailgunClient = '/home/dienst/clojure/vimclojure-nailgun-client/ng.exe'
+" enable 256 colors
+set t_Co=256
+colorscheme lucius

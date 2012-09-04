@@ -1,6 +1,6 @@
 [core]
 	editor = /bin/vim
-	autocrlf = false
+	autocrlf = true
 	filemode = false
 	ignoreCygwinFSTricks = true
 [user]
@@ -10,8 +10,10 @@
 [alias]
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+	lg = log --graph --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit 
 [color]
 	branch = auto
 	diff = auto
 	status = auto
 	interactive = auto
+	ui = auto
