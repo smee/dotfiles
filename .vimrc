@@ -1,5 +1,7 @@
 " why exactly is this needed?
+" we are not compatible with old vi
 set nocompatible
+set laststatus=2
 
 " Use pathogen to easily modify the runtime path to include all
 " plugins under the ~/.vim/bundle directory
