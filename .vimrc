@@ -5,8 +5,7 @@ set laststatus=2
 
 " Use pathogen to easily modify the runtime path to include all
 " plugins under the ~/.vim/bundle directory
-call pathogen#helptags()
-call pathogen#runtime_append_all_bundles()
+call pathogen#infect()
 
 " change the mapleader from \ to ,
 let mapleader=","
@@ -70,10 +69,8 @@ set encoding=utf-8
 set wildmenu
 set wildmode=list:full
 
-" VimClojure settings
-let vimclojure#ParenRainbow = 1
-let vimclojure#WantNailgun = 0
-let vimclojure#NailgunClient = '/home/dienst/clojure/vimclojure-nailgun-client/ng.exe'
 " enable 256 colors
 set t_Co=256
 colorscheme lucius
+" store vim-classpath cache between sessions, refer to vim-classpath documentation
+set viminfo+=!

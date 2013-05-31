@@ -1,6 +1,6 @@
 [core]
 	editor = /bin/vim
-	autocrlf = true
+	autocrlf = false
 	filemode = false
 	ignoreCygwinFSTricks = true
 [user]
@@ -11,9 +11,16 @@
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
 	lg = log --graph --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit 
+	unstage = reset HEAD
+	snapshot = !git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
 [color]
 	branch = auto
 	diff = auto
 	status = auto
 	interactive = auto
 	ui = auto
+[grep]
+	lineNumber = true
+	extendRegexp = true
+[credential]
+	helper = cache

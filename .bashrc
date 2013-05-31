@@ -28,6 +28,9 @@ alias gitlogsmall='git log --graph --abbrev-commit --pretty=oneline --decorate'
 # maven
 alias mvnjr='mvn org.zeroturnaround:javarebel-maven-plugin:generate'
 alias deploy='mvn clean org.zeroturnaround:javarebel-maven-plugin:generate install -PdeployTomcat -Dtomcat.path=d:/tomcat-5.5.27/'
+alias l='lein'
+alias leni='lein'
+alias li='lein install'
 
 export PS1='\[\e[0;37m\](\d \t) \[\e[0;32m\]\u@\[\e[1;33m\]\h \[\e[1;36m\]\w \n\$ \[\e[00m\]'
 
@@ -84,9 +87,9 @@ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
 export JDK6_HOME=d:/Java/jdk1.6/
 export PATH=~/bin:~/scripts:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
-export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j "
-export HISTFILESIZE=100000
-export HISTSIZE=100000
+export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j:z"
+export HISTFILESIZE=10000000
+export HISTSIZE=10000000
 #export http_proxy=localhost:3128
 
 ################################
