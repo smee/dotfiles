@@ -32,7 +32,14 @@ alias l='lein'
 alias leni='lein'
 alias li='lein install'
 
-export PS1='\[\e[0;37m\](\d \t) \[\e[0;32m\]\u@\[\e[1;33m\]\h \[\e[1;36m\]\w \n\$ \[\e[00m\]'
+# create a distinct color from the hostname of the current system
+if [[ $TERM =~ "256color" ]]; then
+   host_color="38;5;$((16 + $(hostname | cksum | cut -c1-3) % 256))";
+else
+   host_color="1;$((31 + $(hostname | cksum | cut -c1-3) % 6))";
+fi
+# show date, user, distinctly colored hostname and path as prompt
+export PS1='\[\e[0;37m\](\d \t) \[\e[0;32m\]\u@\[\e[${host_color}m\]\h \[\e[1;36m\]\w \n\$ \[\e[00m\]'
 
 export EDITOR=/bin/vim
 
