@@ -46,7 +46,7 @@ set title        " change terminal title
 set visualbell   " do not beep
 set noerrorbells " do not beep
 set nobackup
-
+set pastetoggle=<F2> " hit F2 to paste in insert mode without changing indendation
 " Easy window navigation
 map <C-h> <C-w>h
 map <C-j> <C-w>j
