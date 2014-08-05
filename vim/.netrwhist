@@ -1,4 +1,0 @@
-let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =2
-let g:netrw_dirhist_1='/cygdrive/d/Dropbox/Workspaces/android-workspace/binary-dsl/src/org/clojars/smee/binary'
-let g:netrw_dirhist_2='/cygdrive/d/Dropbox/Workspaces/android-workspace/binary-dsl/src/org/clojars/smee/binary/demo'
