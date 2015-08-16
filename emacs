@@ -6,16 +6,14 @@
  '(custom-enabled-themes (quote (tango-dark)))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
+ '(inhibit-startup-screen t)
+ '(initial-buffer-choice t)
  '(org-agenda-files
    (quote
-    ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
+    ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")) t)
+ '(sp-base-key-bindings (quote sp))
  '(tool-bar-mode nil))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+
 ;; set load paths
 (let ((default-directory "~/.emacs.d/lisp/"))
   (normal-top-level-add-subdirs-to-load-path)) 
@@ -49,27 +47,33 @@ Return a list of installed packages or nil for every skipped package."
 (or (file-exists-p package-user-dir)
     (package-refresh-contents))
 
-(ensure-package-installed 'ido-ubiquitous 'smex 'cider 'rainbow-delimiters 'smartparens 'cider 'cider-eval-sexp-fu)   
-
-;; activate installed packages
+;; activate installed packagesf
 (package-initialize) 
 (add-to-list 'package-pinned-packages '(cider . "MELPA") t)
+
+(ensure-package-installed 'ido-ubiquitous
+			  'smex 'cider
+			  'rainbow-delimiters
+			  'paredit
+			  'cider
+			  'cider-eval-sexp-fu
+			  'clj-refactor
+			  'hl-sexp
+			  'ace-jump-mode
+			  'ace-window
+			  'expand-region)   
+
 
 ;; soft wrap long linesq
 (global-visual-line-mode)
 ;; bind M-/ to hippie expand
 (global-set-key (kbd "M-/") 'hippie-expand)
-  ;;;;
-  ;;;; cygwin support
-  ;;;;
 
 ;; use rainbow parentheses everywhere
 (require 'rainbow-delimiters)
 ;; highlight matching parentheses
 (show-paren-mode 1)
-;; paredit mode for emacs lisp and clojure
-(require 'smartparens-config)
-(add-hook 'emacs-lisp-mode #'smartparens-strict-mode)
+
 
 ;; use ido-mode everywhere
 (ido-mode t)
@@ -105,6 +109,19 @@ Return a list of installed packages or nil for every skipped package."
   (blink-cursor-mode -1))
 
 (defalias 'yes-or-no-p 'y-or-n-p)
+
+;; paredit everywhere
+(add-hook 'lisp-mode-hook #'paredit-mode)
+(add-hook 'emacs-lisp-mode-hook #'paredit-mode)
+(add-hook 'emacs-lisp-mode-hook #'hl-sexp-mode)
+
+;; hide ^M characters when editing files with windows carriage returns
+(defun remove-dos-eol ()
+  "Do not show ^M in files containing mixed UNIX and DOS line endings."
+  (interactive)
+  (setq buffer-display-table (make-display-table))
+  (aset buffer-display-table ?\^M []))
+
 ;;;; clojure specific configurations ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'cider-eval-sexp-fu)
 ;; show fn as lambda in clojure files
@@ -114,16 +131,45 @@ Return a list of installed packages or nil for every skipped package."
 							   (match-end 1)
 							   "\u03bb") nil))))))
 (defun my-clojure-configuration ()
-  (smartparens-strict-mode t)
   (esk-pretty-fn)
-  (turn-on-eldoc-mode))
-(add-hook 'clojure-mode-hook 'my-clojure-configuration)
+  (turn-on-eldoc-mode)
+  (remove-dos-eol)
+  (clj-refactor-mode 1)
+  (cljr-add-keybindings-with-prefix "C-c RET")
+  (yas-minor-mode 1)
+  (paredit-mode 1)
+  (hl-sexp-mode 1)
+  (company-mode 1))
+(global-set-key (kbd "TAB") #'company-indent-or-complete-common)
 
-(add-hook 'cider-mode-hook 'my-clojure-configuration)
+;; REPL history file
+(setq cider-repl-history-file "~/.emacs.d/cider-history")
+;; nice pretty printing
+(setq cider-repl-use-pretty-printing t)
+
+;; nicer font lock in REPL
+(setq cider-repl-use-clojure-font-lock t)
+
+;; result prefix for the REPL
+(setq cider-repl-result-prefix ";; => ")
+
+;; never ending REPL history
+(setq cider-repl-wrap-history t)
+
+;; looong history
+(setq cider-repl-history-size 3000)
+;; error buffer not popping up
+(setq cider-show-error-buffer nil)
+;; clj-refactor and dependencies
+(require 'clj-refactor)
+
+(add-hook 'clojure-mode-hook #'my-clojure-configuration)
+(add-hook 'cider-mode-hook #'my-clojure-configuration)
+(add-hook 'cider-repl-mode-hook #'my-clojure-configuration)
 (setq nrepl-log-messages t)
 
 (global-set-key [f8] 'other-frame)
-(global-set-key [f7] 'smartparens-mode)
+(global-set-key [f7] 'paredit-mode)
 (global-set-key [f9] 'cider-jack-in)
 
 
@@ -194,7 +240,15 @@ Return a list of installed packages or nil for every skipped package."
 (global-set-key [(f12)] 'recentf-open-files)
 ;; ace-jump
 (require 'ace-jump-mode)
+(setq ace-jump-mode-submode-list
+      '(ace-jump-char-mode              ;; the first one always map to : C-c SPC 
+	ace-jump-word-mode              ;; the second one always map to: C-u C-c SPC            
+        ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c SPC)
 (define-key global-map (kbd "C-SPC") 'ace-jump-mode)
+;; ace-window
+(require 'ace-window)
+(define-key global-map (kbd "M-p") 'ace-window)
+
 ;; remember places in open files
 (require 'saveplace)
 (setq-default save-place t)
@@ -205,11 +259,16 @@ Return a list of installed packages or nil for every skipped package."
      (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 ;; make sure we use UTF-8 as our standard encoding for text files     
 (modify-coding-system-alist 'file "" 'utf-8-unix)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+;; expand-region for expanding/contracting selections according to nested semantic entities
+(global-set-key (kbd "M-2") 'er/expand-region)
+(global-set-key (kbd "M-3") 'er/contract-region)     
 
-;; hide ^M characters when editing files with windows carriage returns
-(defun remove-dos-eol ()
-  "Do not show ^M in files containing mixed UNIX and DOS line endings."
-  (interactive)
-  (setq buffer-display-table (make-display-table))
-  (aset buffer-display-table ?\^M []))
-(add-hook 'clojure-mode 'remove-dos-eol)
+(global-visual-line-mode)
+;; bind M-/ to hippie expand
+(global-set-key (kbd "M-/") #'hippie-expand)
