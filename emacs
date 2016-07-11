@@ -3,6 +3,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(cider-eval-spinner-type (quote vertical-breathing))
+ '(cider-lein-parameters "trampoline repl :headless")
  '(custom-enabled-themes (quote (tango-dark)))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
@@ -10,8 +12,16 @@
  '(initial-buffer-choice t)
  '(org-agenda-files
    (quote
-    ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")) t)
+    ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
+ '(package-check-signature nil)
+ '(package-selected-packages
+   (quote
+    (markdown-preview-mode markdown-mode edts which-key latex-preview-pane latex-unicode-math-mode magit neotree yaml-mode smex rainbow-delimiters hl-sexp expand-region clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+ '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
+ '(speedbar-supported-extension-expressions
+   (quote
+    (".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?" ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java" ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m" ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k" "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?")))
  '(tool-bar-mode nil))
 
 ;; set load paths
@@ -158,8 +168,17 @@ Return a list of installed packages or nil for every skipped package."
 
 ;; looong history
 (setq cider-repl-history-size 3000)
-;; error buffer not popping up
-(setq cider-show-error-buffer nil)
+
+;; enable figwheel CLJS repl in active NREPL connection
+(defun cider-figwheel-repl ()
+  (interactive)
+  (save-some-buffers)
+  (with-current-buffer (cider-current-repl-buffer)
+    (goto-char (point-max))
+    (insert "(require 'figwheel-sidecar.repl-api)
+             (figwheel-sidecar.repl-api/cljs-repl)")
+    (cider-repl-return)))
+(global-set-key (kbd "C-c C-f") 'cider-figwheel-repl)
 ;; clj-refactor and dependencies
 (require 'clj-refactor)
 
@@ -171,6 +190,7 @@ Return a list of installed packages or nil for every skipped package."
 (global-set-key [f8] 'other-frame)
 (global-set-key [f7] 'paredit-mode)
 (global-set-key [f9] 'cider-jack-in)
+(global-set-key [f10] 'cider-figwheel-repl)
 
 
 ;; scroll one line at a time (less "jumpy" than defaults)
@@ -272,3 +292,7 @@ Return a list of installed packages or nil for every skipped package."
 (global-visual-line-mode)
 ;; bind M-/ to hippie expand
 (global-set-key (kbd "M-/") #'hippie-expand)
+;; enable projectile project manager mode globally
+(projectile-global-mode)
+;; do not create file~ everywhere
+(setq make-backup-files nil)

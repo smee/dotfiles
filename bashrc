@@ -47,10 +47,12 @@ export HISTCONTROL=ignoreboth # Ignores dupes in the history
 shopt -s checkwinsize # After each command, checks the windows size and changes lines and columns
 
 # bash completion settings (actually, these are readline settings)
-bind "set completion-ignore-case on" # note: bind is used instead of setting these in .inputrc.  This ignores case in bash completion
-bind "set bell-style none" # No bell, because it's damn annoying
-bind "set show-all-if-ambiguous On" # this allows you to automatically show completion without double tab-ing
-
+if [ -t 1 ]
+then
+  bind "set completion-ignore-case on" # note: bind is used instead of setting these in .inputrc.  This ignores case in bash completion
+  bind "set bell-style none" # No bell, because it's damn annoying
+  bind "set show-all-if-ambiguous On" # this allows you to automatically show completion without double tab-ing
+fi
 # Turn on advanced bash completion if the file exists (get it here: http://www.caliban.org/bash/index.shtml#completion)
 if [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
@@ -63,6 +65,7 @@ extract () {
         case $1 in
             *.tar.bz2)   tar xvjf $1        ;;
             *.tar.gz)    tar xvzf $1     ;;
+		    *.tar.xz)     tar xvf $1     ;;
             *.bz2)       bunzip2 $1       ;;
             *.rar)       unrar x $1     ;;
             *.gz)        gunzip $1     ;;
