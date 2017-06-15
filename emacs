@@ -34,9 +34,6 @@
    (quote
     ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
  '(package-check-signature nil)
- '(package-selected-packages
-   (quote
-    (ggtags auctex markdown-preview-mode markdown-mode edts which-key latex-preview-pane latex-unicode-math-mode magit neotree yaml-mode smex rainbow-delimiters hl-sexp expand-region clj-refactor ace-window ace-jump-mode)))
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
