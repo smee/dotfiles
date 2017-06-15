@@ -3,6 +3,23 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(TeX-source-correlate-method (quote synctex))
+ '(TeX-source-correlate-mode t)
+ '(TeX-source-correlate-start-server t)
+ '(TeX-view-program-list
+   (quote
+    (("Okular"
+      ("okular --unique %o#src:%n%b")
+      "/usr/bin/okular"))))
+ '(TeX-view-program-selection
+   (quote
+    (((output-dvi has-no-display-manager)
+      "dvi2tty")
+     ((output-dvi style-pstricks)
+      "dvips and gv")
+     (output-dvi "xdvi")
+     (output-pdf "Okular")
+     (output-html "xdg-open"))))
  '(cider-eval-spinner-type (quote vertical-breathing))
  '(cider-lein-parameters "trampoline repl :headless")
  '(custom-enabled-themes (quote (tango-dark)))
@@ -10,13 +27,16 @@
  '(display-time-day-and-date t)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
+ '(neo-hidden-regexp-list
+   (quote
+    ("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$")))
  '(org-agenda-files
    (quote
     ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (markdown-preview-mode markdown-mode edts which-key latex-preview-pane latex-unicode-math-mode magit neotree yaml-mode smex rainbow-delimiters hl-sexp expand-region clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (ggtags auctex markdown-preview-mode markdown-mode edts which-key latex-preview-pane latex-unicode-math-mode magit neotree yaml-mode smex rainbow-delimiters hl-sexp expand-region clj-refactor ace-window ace-jump-mode)))
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
@@ -66,7 +86,6 @@ Return a list of installed packages or nil for every skipped package."
 			  'rainbow-delimiters
 			  'paredit
 			  'cider
-			  'cider-eval-sexp-fu
 			  'clj-refactor
 			  'hl-sexp
 			  'ace-jump-mode
@@ -133,7 +152,6 @@ Return a list of installed packages or nil for every skipped package."
   (aset buffer-display-table ?\^M []))
 
 ;;;; clojure specific configurations ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'cider-eval-sexp-fu)
 ;; show fn as lambda in clojure files
 (defun esk-pretty-fn ()
   (font-lock-add-keywords nil `(("(\\(fn\\>\\)"
@@ -296,3 +314,20 @@ Return a list of installed packages or nil for every skipped package."
 (projectile-global-mode)
 ;; do not create file~ everywhere
 (setq make-backup-files nil)
+
+;; helper for recompiling after at least one manual call to M-x compile
+(defun compile-on-save-start ()
+  (let ((buffer (compilation-find-buffer)))
+    (unless (get-buffer-process buffer) 
+      (recompile))))
+
+;; use this mode to automatically call M-x compile after each file save
+(define-minor-mode compile-on-save-mode
+  "Minor mode to automatically call `recompile' whenever the
+current buffer is saved. When there is ongoing compilation,
+nothing happens."
+  :lighter " CoS"
+    (if compile-on-save-mode
+    (progn  (make-local-variable 'after-save-hook)
+        (add-hook 'after-save-hook 'compile-on-save-start nil t))
+      (kill-local-variable 'after-save-hook)))
