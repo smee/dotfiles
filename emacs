@@ -34,6 +34,9 @@
    (quote
     ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
  '(package-check-signature nil)
+ '(package-selected-packages
+   (quote
+    (ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
@@ -78,8 +81,9 @@ Return a list of installed packages or nil for every skipped package."
 (package-initialize) 
 (add-to-list 'package-pinned-packages '(cider . "MELPA") t)
 
-(ensure-package-installed 'ido-ubiquitous
-			  'smex 'cider
+(ensure-package-installed 'ido-completing-read+
+			  'smex
+			  'cider
 			  'rainbow-delimiters
 			  'paredit
 			  'cider
@@ -87,7 +91,8 @@ Return a list of installed packages or nil for every skipped package."
 			  'hl-sexp
 			  'ace-jump-mode
 			  'ace-window
-			  'expand-region)   
+			  'expand-region
+			  'neotree)   
 
 
 ;; soft wrap long linesq
@@ -103,7 +108,10 @@ Return a list of installed packages or nil for every skipped package."
 
 ;; use ido-mode everywhere
 (ido-mode t)
-(ido-ubiquitous t)
+(ido-everywhere t)
+(require 'ido-completing-read+)
+(ido-ubiquitous-mode 1)
+
 (setq ido-enable-prefix nil
       ido-enable-flex-matching t
       ido-auto-merge-work-directories-length nil
