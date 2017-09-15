@@ -93,7 +93,6 @@ Return a list of installed packages or nil for every skipped package."
 			  'ace-window
 			  'expand-region
 			  'neotree
-			  'hideshowvis
 			  'projectile)   
 
 
@@ -174,8 +173,7 @@ Return a list of installed packages or nil for every skipped package."
   (yas-minor-mode 1)
   (paredit-mode 1)
   (hl-sexp-mode 1)
-  (company-mode 1)
-  (hideshowvis-minor-mode 1))
+  (company-mode 1))
 
 (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
 (global-set-key (kbd "<f5>") #'hs-toggle-hiding)
