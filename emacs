@@ -36,7 +36,7 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
@@ -92,7 +92,9 @@ Return a list of installed packages or nil for every skipped package."
 			  'ace-jump-mode
 			  'ace-window
 			  'expand-region
-			  'neotree)   
+			  'neotree
+			  'hideshowvis
+			  'projectile)   
 
 
 ;; soft wrap long linesq
@@ -172,9 +174,11 @@ Return a list of installed packages or nil for every skipped package."
   (yas-minor-mode 1)
   (paredit-mode 1)
   (hl-sexp-mode 1)
-  (company-mode 1))
-(global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+  (company-mode 1)
+  (hideshowvis-minor-mode 1))
 
+(global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+(global-set-key (kbd "<f5>") #'hs-toggle-hiding)
 ;; REPL history file
 (setq cider-repl-history-file "~/.emacs.d/cider-history")
 ;; nice pretty printing
