@@ -186,3 +186,5 @@ export DISPLAY=:0.0
 export TERM=xterm-256color
 # -rw-r--r--
 # umask 0133
+# diable XOFF, else Ctrl+s will completely block the terminal, needs a Ctrl+q to unlock
+stty -ixon
