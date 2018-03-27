@@ -22,7 +22,13 @@ alias gp='git push origin && git push github'
 alias gap='git add --interactive'
 alias gl='git lg'
 alias gk='gitk --all'
+# show simplified git commit history: all tags, last commit per branch and branch points
+alias glo='git lg --simplify-by-decoration'
 
+#find all commits that contains the given regex
+find-commit () {
+  git log -G "$@" --graph --oneline --stat
+}
 # GIT SVN
 alias svnpull='git svn rebase'
 alias svnpush='git svn dcommit'
