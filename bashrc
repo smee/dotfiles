@@ -102,13 +102,11 @@ shopt -s cdspell
 CDPATH='.'
 source ~/dotfiles/scripts/z.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
-export JDK6_HOME=d:/Java/jdk1.6/
 export PATH=~/bin:~/dotfiles/scripts:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
-export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j:z"
+export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j:z *"
 export HISTFILESIZE=10000000
 export HISTSIZE=10000000
-#export http_proxy=localhost:3128
 
 ################################
 # use ssh-agent for caching key passwords

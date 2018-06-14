@@ -36,7 +36,7 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
