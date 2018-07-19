@@ -36,7 +36,9 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+ '(racer-rust-src-path
+   "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
@@ -318,7 +320,7 @@ Return a list of installed packages or nil for every skipped package."
 ;; bind M-/ to hippie expand
 (global-set-key (kbd "M-/") #'hippie-expand)
 ;; enable projectile project manager mode globally
-(projectile-global-mode)
+(projectile-mode)
 ;; do not create file~ everywhere
 (setq make-backup-files nil)
 
@@ -338,3 +340,11 @@ nothing happens."
     (progn  (make-local-variable 'after-save-hook)
         (add-hook 'after-save-hook 'compile-on-save-start nil t))
       (kill-local-variable 'after-save-hook)))
+
+;; Rust support
+(add-hook 'rust-mode-hook #'racer-mode)
+(add-hook 'racer-mode-hook #'eldoc-mode)
+(add-hook 'racer-mode-hook #'company-mode)
+(require 'rust-mode)
+(define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
+(setq company-tooltip-align-annotations t)

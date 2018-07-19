@@ -5,7 +5,7 @@
 	ignoreCygwinFSTricks = true
 [user]
 	name = Steffen Dienst
-	email = sdienst@informatik.uni-leipzig.de
+	email = steffen.dienst@gmail.com
 	signingkey = 851C9D55
 [alias]
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
