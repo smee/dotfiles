@@ -95,8 +95,11 @@ Return a list of installed packages or nil for every skipped package."
 			  'ace-window
 			  'expand-region
 			  'neotree
-			  'projectile)   
-
+			  'projectile
+			  'magit
+			  'which-key)
+;; show available key bindings when pressing any registered prefix
+(which-key-mode t)
 
 ;; soft wrap long linesq
 (global-visual-line-mode)
@@ -123,7 +126,7 @@ Return a list of installed packages or nil for every skipped package."
       ido-use-virtual-buffers t
       ido-handle-duplicate-virtual-buffers 2
       ido-max-prospects 10
-      ido-work-directory-list '("~/" "d:/dropbox/workspaces/android-workspace"))
+      ido-work-directory-list '("~/" "/home/steffen/Dropbox/workspaces/current-workspace"))
 
 ;; smex, like ido for M-x
 (global-set-key [(meta x)] (lambda ()
@@ -321,6 +324,7 @@ Return a list of installed packages or nil for every skipped package."
 (global-set-key (kbd "M-/") #'hippie-expand)
 ;; enable projectile project manager mode globally
 (projectile-mode)
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 ;; do not create file~ everywhere
 (setq make-backup-files nil)
 
