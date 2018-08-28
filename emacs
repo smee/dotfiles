@@ -36,7 +36,7 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
@@ -97,7 +97,10 @@ Return a list of installed packages or nil for every skipped package."
 			  'neotree
 			  'projectile
 			  'magit
-			  'which-key)
+			  'which-key
+			  'ido
+			  'ido-ubiquitous
+			  'org)
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
