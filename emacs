@@ -27,6 +27,7 @@
  '(display-time-day-and-date t)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
+ '(magit-todos-require-colon nil)
  '(neo-hidden-regexp-list
    (quote
     ("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$")))
@@ -36,7 +37,7 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
@@ -96,7 +97,7 @@ Return a list of installed packages or nil for every skipped package."
 			  'expand-region
 			  'neotree
 			  'projectile
-			  'magit
+			  'magit 'magit-todos
 			  'which-key
 			  'ido
 			  'ido-ubiquitous
@@ -114,6 +115,8 @@ Return a list of installed packages or nil for every skipped package."
 ;; highlight matching parentheses
 (show-paren-mode 1)
 
+(require 'magit-todos)
+(magit-todos-mode 1)
 
 ;; use ido-mode everywhere
 (ido-mode t)
@@ -249,9 +252,11 @@ Return a list of installed packages or nil for every skipped package."
 (define-key global-map "\C-ca" 'org-agenda)
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
-	 "* TODO %?\n  %i\n  %a")
+	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
+	("m" "Meeting" entry (file org-default-notes-file)
+	  "* MEETING with %? :MEETING:\n%t" :clock-in t :clock-resume t)
         ("j" "Journal" entry (file+datetree "tagebuch.org")
-	 "* %?\nEntered on %U\n  %i\n  %a")))    
+	 "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
 (setq org-mobile-force-id-on-agenda-items nil)
 ;; custom agendas for mobileorg
 (setq org-agenda-custom-commands
