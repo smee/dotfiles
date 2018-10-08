@@ -250,13 +250,39 @@ Return a list of installed packages or nil for every skipped package."
 (setq org-default-notes-file (concat org-directory "/notes.org"))
 (define-key global-map "\C-cc" 'org-capture)
 (define-key global-map "\C-ca" 'org-agenda)
+(setq org-todo-keywords
+      (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+              (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
+
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
 	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
 	("m" "Meeting" entry (file org-default-notes-file)
-	  "* MEETING with %? :MEETING:\n%t" :clock-in t :clock-resume t)
+	 "* MEETING with %? on %U :MEETING:\n%t" :clock-in t :clock-resume t)
+	("p" "Phone call" entry (file+headline "notes.org" "Calls")
+	 "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
         ("j" "Journal" entry (file+datetree "tagebuch.org")
 	 "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
+
+
+(setq org-todo-keyword-faces
+      (quote (("TODO" :foreground "red" :weight bold)
+              ("NEXT" :foreground "blue" :weight bold)
+              ("DONE" :foreground "forest green" :weight bold)
+              ("WAITING" :foreground "orange" :weight bold)
+              ("HOLD" :foreground "magenta" :weight bold)
+              ("CANCELLED" :foreground "forest green" :weight bold)
+              ("MEETING" :foreground "forest green" :weight bold)
+              ("PHONE" :foreground "forest green" :weight bold))))
+
+;; Remove empty LOGBOOK drawers on clock out
+(defun bh/remove-empty-drawer-on-clock-out ()
+  (interactive)
+  (save-excursion
+    (beginning-of-line 0)
+    (org-remove-empty-drawer-at "LOGBOOK" (point))))
+(add-hook 'org-clock-out-hook 'bh/remove-empty-drawer-on-clock-out 'append)
+
 (setq org-mobile-force-id-on-agenda-items nil)
 ;; custom agendas for mobileorg
 (setq org-agenda-custom-commands
