@@ -379,6 +379,21 @@ nothing happens."
         (add-hook 'after-save-hook 'compile-on-save-start nil t))
       (kill-local-variable 'after-save-hook)))
 
+;; ebnf syntax highlighting, inspired by https://github.com/jeramey/ebnf-mode/blob/master/ebnf-mode.el
+(define-generic-mode 'ebnf-mode
+  '(("(*" . "*)"))
+  '("=")
+  '(("^[^ \t\n][^=]+" . font-lock-variable-name-face)
+    ("['\"].*?['\"]" . font-lock-string-face)
+    ("\\?.*\\?" . font-lock-negation-char-face)
+    ("\\[\\|\\]\\|{\\|}\\|(\\|)\\||\\|,\\|;" . font-lock-type-face)
+    ("[^ \t\n]" . font-lock-function-name-face))
+  '("\\.ebnf\\'")
+  `(,(lambda () (setq mode-name "EBNF")))
+  "Major mode for EBNF metasyntax text highlighting.")
+
+(provide 'ebnf-mode)
+
 ;; Rust support
 (add-hook 'rust-mode-hook #'racer-mode)
 (add-hook 'racer-mode-hook #'eldoc-mode)
