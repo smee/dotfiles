@@ -84,7 +84,7 @@ Return a list of installed packages or nil for every skipped package."
 (package-initialize) 
 (add-to-list 'package-pinned-packages '(cider . "MELPA") t)
 
-(ensure-package-installed 'ido-completing-read+
+(ensure-package-installed 'ido-completing-read+ 'company
 			  'smex
 			  'cider
 			  'rainbow-delimiters
@@ -257,8 +257,8 @@ Return a list of installed packages or nil for every skipped package."
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
 	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
-	("m" "Meeting" entry (file org-default-notes-file)
-	 "* MEETING with %? on %U :MEETING:\n%t" :clock-in t :clock-resume t)
+	("m" "Meeting" entry (file+datetree "tagebuch.org")
+	 "* MEETING with %? on %U :MEETING:\n" :clock-in t :clock-resume t)
 	("p" "Phone call" entry (file+headline "notes.org" "Calls")
 	 "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
         ("j" "Journal" entry (file+datetree "tagebuch.org")
@@ -275,13 +275,6 @@ Return a list of installed packages or nil for every skipped package."
               ("MEETING" :foreground "forest green" :weight bold)
               ("PHONE" :foreground "forest green" :weight bold))))
 
-;; Remove empty LOGBOOK drawers on clock out
-(defun bh/remove-empty-drawer-on-clock-out ()
-  (interactive)
-  (save-excursion
-    (beginning-of-line 0)
-    (org-remove-empty-drawer-at "LOGBOOK" (point))))
-(add-hook 'org-clock-out-hook 'bh/remove-empty-drawer-on-clock-out 'append)
 
 (setq org-mobile-force-id-on-agenda-items nil)
 ;; custom agendas for mobileorg
@@ -328,7 +321,17 @@ Return a list of installed packages or nil for every skipped package."
       '(ace-jump-char-mode              ;; the first one always map to : C-c SPC 
 	ace-jump-word-mode              ;; the second one always map to: C-u C-c SPC            
         ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c SPC)
-(define-key global-map (kbd "C-SPC") 'ace-jump-mode)
+(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+;; jump back to position before last ace-mode jump with "C-x SPC"
+(autoload
+   'ace-jump-mode-pop-mark
+   "ace-jump-mode"
+   "Ace jump back:-)"
+   t)
+ (eval-after-load "ace-jump-mode"
+   '(ace-jump-mode-enable-mark-sync))
+ (define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
+ 
 ;; ace-window
 (require 'ace-window)
 (define-key global-map (kbd "M-p") 'ace-window)
@@ -340,7 +343,7 @@ Return a list of installed packages or nil for every skipped package."
 
 (autoload 'markdown-mode "markdown-mode"
         "Major mode for editing Markdown files" t)
-     (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 ;; make sure we use UTF-8 as our standard encoding for text files     
 (modify-coding-system-alist 'file "" 'utf-8-unix)
 (custom-set-faces
@@ -393,7 +396,7 @@ nothing happens."
   "Major mode for EBNF metasyntax text highlighting.")
 
 (provide 'ebnf-mode)
-
+(add-to-list 'auto-mode-alist '("\\.ebnf\\'" . ebnf-mode))
 ;; Rust support
 (add-hook 'rust-mode-hook #'racer-mode)
 (add-hook 'racer-mode-hook #'eldoc-mode)

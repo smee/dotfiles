@@ -102,7 +102,7 @@ shopt -s cdspell
 CDPATH='.'
 source ~/dotfiles/scripts/z.sh
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=150m "
-export PATH=~/bin:~/dotfiles/scripts:$PATH
+export PATH=~/bin:~/dotfiles/scripts:~/.cargo/bin:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
 export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j:z *"
 export HISTFILESIZE=10000000
