@@ -20,11 +20,14 @@
      (output-dvi "xdvi")
      (output-pdf "Okular")
      (output-html "xdg-open"))))
+ '(blink-cursor-mode nil)
  '(cider-eval-spinner-type (quote vertical-breathing))
  '(cider-lein-parameters "trampoline repl :headless")
+ '(column-number-mode t)
  '(custom-enabled-themes (quote (tango-dark)))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
+ '(display-time-mode t)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
  '(magit-todos-require-colon nil)
@@ -37,10 +40,11 @@
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
+ '(show-paren-mode t)
  '(sp-base-key-bindings (quote sp))
  '(speedbar-supported-extension-expressions
    (quote
@@ -257,8 +261,8 @@ Return a list of installed packages or nil for every skipped package."
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
 	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
-	("m" "Meeting" entry (file+datetree "tagebuch.org")
-	 "* MEETING with %? on %U :MEETING:\n" :clock-in t :clock-resume t)
+	("m" "Meeting" entry (file+datetree "notes.org" "Meetings")
+	 "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
 	("p" "Phone call" entry (file+headline "notes.org" "Calls")
 	 "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
         ("j" "Journal" entry (file+datetree "tagebuch.org")
@@ -280,13 +284,74 @@ Return a list of installed packages or nil for every skipped package."
 ;; custom agendas for mobileorg
 (setq org-agenda-custom-commands
       '(("w" todo "TODO")
-	("h" agenda "" ((org-agenda-show-all-dates nil)))
-	("W" agenda "" ((org-agenda-ndays 21)
-			(org-agenda-show-all-dates nil)))
-	("A" agenda ""
+	("h" agenda "all dates" ((org-agenda-show-all-dates nil)))
+	("W" agenda "three weeks" ((org-agenda-ndays 21)
+				   (org-agenda-show-all-dates nil)))
+	("A" agenda "today"
 	 ((org-agenda-ndays 1)
 	  (org-agenda-overriding-header "Today")))))
 
+;;;;; reviews for different time intervals, from https://stackoverflow.com/a/22440571
+;; define "R" as the prefix key for reviewing what happened in various
+;; time periods
+(add-to-list 'org-agenda-custom-commands
+             '("R" . "Review" )
+             )
+
+;; Common settings for all reviews
+(setq efs/org-agenda-review-settings
+      '((org-agenda-show-all-dates t)
+        (org-agenda-start-with-log-mode t)
+        (org-agenda-start-with-clockreport-mode t)
+        (org-agenda-archives-mode t)
+        ;; I don't care if an entry was archived
+        (org-agenda-hide-tags-regexp
+         (concat org-agenda-hide-tags-regexp
+                 "\\|ARCHIVE"))
+      ))
+;; Show the agenda with the log turn on, the clock table show and
+;; archived entries shown.  These commands are all the same exept for
+;; the time period.
+(add-to-list 'org-agenda-custom-commands
+             `("Rw" "Week in review"
+                agenda ""
+                ;; agenda settings
+                ,(append
+                  efs/org-agenda-review-settings
+                  '((org-agenda-span 'week)
+                    (org-agenda-start-on-weekday 0)
+                    (org-agenda-overriding-header "Week in Review"))
+                  )
+                ("~/org/review/week.html")
+                ))
+
+
+(add-to-list 'org-agenda-custom-commands
+             `("Rd" "Day in review"
+                agenda ""
+                ;; agenda settings
+                ,(append
+                  efs/org-agenda-review-settings
+                  '((org-agenda-span 'day)
+                    (org-agenda-overriding-header "Week in Review"))
+                  )
+                ("~/org/review/day.html")
+                ))
+
+(add-to-list 'org-agenda-custom-commands
+             `("Rm" "Month in review"
+                agenda ""
+                ;; agenda settings
+                ,(append
+                  efs/org-agenda-review-settings
+                  '((org-agenda-span 'month)
+                    (org-agenda-start-day "01")
+                    (org-read-date-prefer-future nil)
+                    (org-agenda-overriding-header "Month in Review"))
+                  )
+                ("~/org/review/month.html")
+                ))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Enable column number mode
 (column-number-mode t)
 (display-time)
@@ -351,7 +416,7 @@ Return a list of installed packages or nil for every skipped package."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:family "DejaVu Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 102 :width normal)))))
 ;; expand-region for expanding/contracting selections according to nested semantic entities
 (global-set-key (kbd "M-2") 'er/expand-region)
 (global-set-key (kbd "M-3") 'er/contract-region)     
