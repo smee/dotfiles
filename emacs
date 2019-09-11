@@ -30,17 +30,20 @@
  '(display-time-mode t)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
+ '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
  '(magit-todos-require-colon nil)
  '(neo-hidden-regexp-list
    (quote
     ("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$")))
+ '(neo-window-fixed-size nil)
+ '(org-agenda-clockreport-parameter-plist (quote (:link t :maxlevel 5)))
  '(org-agenda-files
    (quote
     ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
@@ -49,7 +52,8 @@
  '(speedbar-supported-extension-expressions
    (quote
     (".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?" ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java" ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m" ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k" "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?")))
- '(tool-bar-mode nil))
+ '(tool-bar-mode nil)
+ '(xref-js2-ignored-dirs (quote ("bower_components" "node_modules" "build"))))
 
 ;; set load paths
 (let ((default-directory "~/.emacs.d/lisp/"))
@@ -105,7 +109,9 @@ Return a list of installed packages or nil for every skipped package."
 			  'which-key
 			  'ido
 			  'ido-ubiquitous
-			  'org)
+			  'org
+			  'rust-mode
+			  'js2-mode 'xref-js2)
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
@@ -173,6 +179,13 @@ Return a list of installed packages or nil for every skipped package."
   (aset buffer-display-table ?\^M []))
 
 ;;;; clojure specific configurations ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'clojure-mode)
+;; indent re-frame functions without so much leading white space
+(define-clojure-indent
+  (reg-sub '(1))
+  (reg-event-db '(1))
+  (reg-event-fx '(1)))
+  
 ;; show fn as lambda in clojure files
 (defun esk-pretty-fn ()
   (font-lock-add-keywords nil `(("(\\(fn\\>\\)"
@@ -261,10 +274,10 @@ Return a list of installed packages or nil for every skipped package."
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
 	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
-	("m" "Meeting" entry (file+datetree "notes.org" "Meetings")
+	("m" "Meeting" entry (file+headline "notes.org" "Meetings")
 	 "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
 	("p" "Phone call" entry (file+headline "notes.org" "Calls")
-	 "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
+	 "* PHONE %? %U :PHONE:\n" :clock-in t :clock-resume t)
         ("j" "Journal" entry (file+datetree "tagebuch.org")
 	 "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
 
@@ -284,9 +297,6 @@ Return a list of installed packages or nil for every skipped package."
 ;; custom agendas for mobileorg
 (setq org-agenda-custom-commands
       '(("w" todo "TODO")
-	("h" agenda "all dates" ((org-agenda-show-all-dates nil)))
-	("W" agenda "three weeks" ((org-agenda-ndays 21)
-				   (org-agenda-show-all-dates nil)))
 	("A" agenda "today"
 	 ((org-agenda-ndays 1)
 	  (org-agenda-overriding-header "Today")))))
@@ -306,9 +316,7 @@ Return a list of installed packages or nil for every skipped package."
         (org-agenda-archives-mode t)
         ;; I don't care if an entry was archived
         (org-agenda-hide-tags-regexp
-         (concat org-agenda-hide-tags-regexp
-                 "\\|ARCHIVE"))
-      ))
+         (concat org-agenda-hide-tags-regexp "\\|ARCHIVE"))))
 ;; Show the agenda with the log turn on, the clock table show and
 ;; archived entries shown.  These commands are all the same exept for
 ;; the time period.
@@ -320,10 +328,8 @@ Return a list of installed packages or nil for every skipped package."
                   efs/org-agenda-review-settings
                   '((org-agenda-span 'week)
                     (org-agenda-start-on-weekday 0)
-                    (org-agenda-overriding-header "Week in Review"))
-                  )
-                ("~/org/review/week.html")
-                ))
+                    (org-agenda-overriding-header "Week in Review")))
+                ("~/org/review/week.html")))
 
 
 (add-to-list 'org-agenda-custom-commands
@@ -333,10 +339,8 @@ Return a list of installed packages or nil for every skipped package."
                 ,(append
                   efs/org-agenda-review-settings
                   '((org-agenda-span 'day)
-                    (org-agenda-overriding-header "Week in Review"))
-                  )
-                ("~/org/review/day.html")
-                ))
+                    (org-agenda-overriding-header "Day in Review")))
+                ("~/org/review/day.html")))
 
 (add-to-list 'org-agenda-custom-commands
              `("Rm" "Month in review"
@@ -347,10 +351,13 @@ Return a list of installed packages or nil for every skipped package."
                   '((org-agenda-span 'month)
                     (org-agenda-start-day "01")
                     (org-read-date-prefer-future nil)
-                    (org-agenda-overriding-header "Month in Review"))
-                  )
-                ("~/org/review/month.html")
-                ))
+                    (org-agenda-overriding-header "Month in Review")))
+                ("~/org/review/month.html")))
+;; show all nested sections when refiling
+(setq org-refile-targets '((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
+(setq org-refile-use-outline-path t)                  ; Show full paths for refiling
+(setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Enable column number mode
 (column-number-mode t)
@@ -469,3 +476,15 @@ nothing happens."
 (require 'rust-mode)
 (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
 (setq company-tooltip-align-annotations t)
+;; toggle line wrap for long lines, easier when printing very wide tables
+(global-set-key (kbd "C-c w") 'toggle-truncate-lines)
+
+;; javascript
+(require 'xref-js2)
+(require 'js2-mode)
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
+;; javascript-mode has a clashing non-functioning keybinding to jump to definitions, unbind it 
+(define-key js-mode-map (kbd "M-.") nil)
+;; make sure we use xref-js2 to jump to definitions
+(add-hook 'js2-mode-hook (lambda () (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
