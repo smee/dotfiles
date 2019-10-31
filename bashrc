@@ -191,4 +191,5 @@ export TERM=xterm-256color
 # -rw-r--r--
 # umask 0133
 # diable XOFF, else Ctrl+s will completely block the terminal, needs a Ctrl+q to unlock
-stty -ixon
+# only if the current shell is interactive (else we see the error "stty: 'standard input': Inappropriate ioctl for device")
+[[ $- == *i* ]] && stty -ixon
