@@ -24,10 +24,11 @@
  '(cider-eval-spinner-type (quote vertical-breathing))
  '(cider-lein-parameters "trampoline repl :headless")
  '(column-number-mode t)
- '(custom-enabled-themes (quote (tango-dark)))
+ '(custom-enabled-themes (quote modus-operandi))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
+ '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
  '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
@@ -39,11 +40,11 @@
  '(org-agenda-clockreport-parameter-plist (quote (:link t :maxlevel 5)))
  '(org-agenda-files
    (quote
-    ("~/org/gtd.org" "~/org/notes.org" "~/foo.org" "~/org/tagebuch.org")))
+    ("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org")))
  '(package-check-signature nil)
  '(package-selected-packages
    (quote
-    (xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
+    (abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax (quote string))
@@ -94,6 +95,7 @@ Return a list of installed packages or nil for every skipped package."
 
 (ensure-package-installed 'ido-completing-read+ 'company
 			  'smex
+                          'hydra
 			  'cider
 			  'rainbow-delimiters
 			  'paredit
@@ -111,7 +113,9 @@ Return a list of installed packages or nil for every skipped package."
 			  'ido-ubiquitous
 			  'org
 			  'rust-mode
-			  'js2-mode 'xref-js2)
+			  'js2-mode 'xref-js2
+			  'flycheck-clj-kondo
+			  'modus-operandi-theme 'modus-vivendi-theme)
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
@@ -262,7 +266,7 @@ Return a list of installed packages or nil for every skipped package."
 ;; org-mode settings
 (setq org-directory "~/org")
 (setq org-mobile-directory (concat org-directory "/mobileorg"))
-(setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org"))
+(setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
 (setq org-mobile-inbox-for-pull (concat org-directory "/inbox.org"))
 (setq org-default-notes-file (concat org-directory "/notes.org"))
 (define-key global-map "\C-cc" 'org-capture)
@@ -390,10 +394,10 @@ Return a list of installed packages or nil for every skipped package."
 ;; ace-jump
 (require 'ace-jump-mode)
 (setq ace-jump-mode-submode-list
-      '(ace-jump-char-mode              ;; the first one always map to : C-c SPC 
-	ace-jump-word-mode              ;; the second one always map to: C-u C-c SPC            
-        ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c SPC)
-(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+      '(ace-jump-char-mode              ;; the first one always map to : C-c j 
+	ace-jump-word-mode              ;; the second one always map to: C-u C-c j            
+        ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c j)
+(define-key global-map (kbd "C-c j") 'ace-jump-mode)
 ;; jump back to position before last ace-mode jump with "C-x SPC"
 (autoload
    'ace-jump-mode-pop-mark
@@ -402,7 +406,7 @@ Return a list of installed packages or nil for every skipped package."
    t)
  (eval-after-load "ace-jump-mode"
    '(ace-jump-mode-enable-mark-sync))
- (define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
+ (define-key global-map (kbd "C-x j") 'ace-jump-mode-pop-mark)
  
 ;; ace-window
 (require 'ace-window)
@@ -488,3 +492,31 @@ nothing happens."
 (define-key js-mode-map (kbd "M-.") nil)
 ;; make sure we use xref-js2 to jump to definitions
 (add-hook 'js2-mode-hook (lambda () (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+;; check clj/cljc/cljs files with clj-kondo https://github.com/borkdude/flycheck-clj-kondo
+(require 'flycheck-clj-kondo)
+(global-flycheck-mode)
+
+(defun org-outlook-open (id)
+  "Open the Outlook item identified by ID.  ID should be an Outlook GUID."
+  ;; 2017-03-02: following line stopped working with "org-outlook-open: ShellExecute failed: Access is denied."
+  ;;(w32-shell-execute "open" (concat "outlook:" id))
+  ;; fix:
+  (if (boundp 'w32-shell-execute)
+      (w32-shell-execute "open"
+                     "C:/Program Files/Microsoft Office/root/Office16/OUTLOOK.EXE"
+                     (concat "/select " "outlook:" id))
+      (shell-command (concat "/mnt/c/Program\\ Files/Microsoft\\ Office/root/Office16/OUTLOOK.EXE /select outlook:" id))))
+
+(org-add-link-type "outlook" 'org-outlook-open)
+
+;; VcXrc under Windows won't toggle keyboard layouts, so let's make it easier to insert german umlauts
+(defhydra hydra-umlauts (global-map "C-;")
+  "Umlaute"
+  ("'" (insert "ä") "ä")
+  ("\"" (insert "Ä") "Ä")
+  (";" (insert "ö") "ö")
+  (":" (insert "Ö") "Ö")
+  ("[" (insert "ü") "ü")
+  ("{" (insert "Ü") "Ü")
+  ("-" (insert "ß") "ß")
+  ("E" (insert "€") "€"))
