@@ -35,3 +35,5 @@
 	  prompt = false
 [alias]
 	  wdiff = diff --word-diff=color --unified=1
+[merge]
+	conflictStyle = diff3

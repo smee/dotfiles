@@ -39,7 +39,8 @@ alias deploy='mvn clean org.zeroturnaround:javarebel-maven-plugin:generate insta
 alias l='lein'
 alias leni='lein'
 alias li='lein install'
-
+# top-like interface for running docker containers, see https://github.com/bcicen/ctop
+alias ctop="docker run -ti --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/vektorlab/ctop:latest -scale-cpu -a"
 # create a distinct color from the hostname of the current system
 if [[ $TERM =~ "256color" ]]; then
    host_color="38;5;$((16 + $(hostname | cksum | cut -c1-3) % 256))";
