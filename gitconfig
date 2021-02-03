@@ -37,3 +37,6 @@
 	  wdiff = diff --word-diff=color --unified=1
 [merge]
 	conflictStyle = diff3
+[rerere]
+	enabled = true
+	autoupdate = true
