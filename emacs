@@ -1,68 +1,9 @@
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(TeX-source-correlate-method (quote synctex))
- '(TeX-source-correlate-mode t)
- '(TeX-source-correlate-start-server t)
- '(TeX-view-program-list
-   (quote
-    (("Okular"
-      ("okular --unique %o#src:%n%b")
-      "/usr/bin/okular"))))
- '(TeX-view-program-selection
-   (quote
-    (((output-dvi has-no-display-manager)
-      "dvi2tty")
-     ((output-dvi style-pstricks)
-      "dvips and gv")
-     (output-dvi "xdvi")
-     (output-pdf "Okular")
-     (output-html "xdg-open"))))
- '(blink-cursor-mode nil)
- '(cider-eval-spinner-type (quote vertical-breathing))
- '(cider-lein-parameters "trampoline repl :headless")
- '(column-number-mode t)
- '(custom-enabled-themes (quote modus-operandi))
- '(display-time-24hr-format t)
- '(display-time-day-and-date t)
- '(display-time-mode t)
- '(indent-tabs-mode nil)
- '(inhibit-startup-screen t)
- '(initial-buffer-choice t)
- '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
- '(magit-todos-require-colon nil)
- '(neo-hidden-regexp-list
-   (quote
-    ("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$")))
- '(neo-window-fixed-size nil)
- '(org-agenda-clockreport-parameter-plist (quote (:link t :maxlevel 5)))
- '(org-agenda-files
-   (quote
-    ("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org")))
- '(package-check-signature nil)
- '(package-selected-packages
-   (quote
-    (abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode)))
- '(racer-rust-src-path
-   "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
- '(reb-re-syntax (quote string))
- '(show-paren-mode t)
- '(sp-base-key-bindings (quote sp))
- '(speedbar-supported-extension-expressions
-   (quote
-    (".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?" ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java" ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m" ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k" "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?")))
- '(tool-bar-mode nil)
- '(xref-js2-ignored-dirs (quote ("bower_components" "node_modules" "build"))))
-
 ;; set load paths
 (let ((default-directory "~/.emacs.d/lisp/"))
   (normal-top-level-add-subdirs-to-load-path)) 
 ;; ensure elpa packages get loaded
 (require 'package)  
-;; activate installed packages
-(package-initialize) 
+
 ;;;;;;; package installation urls ;;;;;;;;;;;;;;;;;;;
 (setq package-archives '(;("ELPA" . "http://tromey.com/elpa/") 
 			 ("gnu" . "http://elpa.gnu.org/packages/")
@@ -99,7 +40,6 @@ Return a list of installed packages or nil for every skipped package."
 			  'cider
 			  'rainbow-delimiters
 			  'paredit
-			  'cider
 			  'clj-refactor
 			  'hl-sexp
 			  'ace-jump-mode
@@ -115,7 +55,9 @@ Return a list of installed packages or nil for every skipped package."
 			  'rust-mode
 			  'js2-mode 'xref-js2
 			  'flycheck-clj-kondo
-			  'modus-operandi-theme 'modus-vivendi-theme)
+			  'modus-operandi-theme
+                          'modus-vivendi-theme
+                          'bm)
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
@@ -264,6 +206,7 @@ Return a list of installed packages or nil for every skipped package."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org-mode settings
+(setq org-image-actual-width (/ (display-pixel-width) 3)) ;; show inline images at 1/3rd of screen width
 (setq org-directory "~/org")
 (setq org-mobile-directory (concat org-directory "/mobileorg"))
 (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
@@ -427,7 +370,7 @@ Return a list of installed packages or nil for every skipped package."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "DejaVu Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 102 :width normal)))))
+ )
 ;; expand-region for expanding/contracting selections according to nested semantic entities
 (global-set-key (kbd "M-2") 'er/expand-region)
 (global-set-key (kbd "M-3") 'er/contract-region)     
@@ -510,7 +453,7 @@ nothing happens."
 (org-add-link-type "outlook" 'org-outlook-open)
 
 ;; VcXrc under Windows won't toggle keyboard layouts, so let's make it easier to insert german umlauts
-(defhydra hydra-umlauts (global-map "C-;")
+(defhydra hydra-umlauts ()
   "Umlaute"
   ("'" (insert "ä") "ä")
   ("\"" (insert "Ä") "Ä")
@@ -520,3 +463,108 @@ nothing happens."
   ("{" (insert "Ü") "Ü")
   ("-" (insert "ß") "ß")
   ("E" (insert "€") "€"))
+(global-set-key (kbd "C-;") 'hydra-umlauts/body)
+
+
+(defhydra hydra-org-clock (:color blue :hint nil)
+   "
+Clock   In/out^     ^Edit^   ^Summary     (_?_)
+-----------------------------------------
+        _i_n         _e_dit       _j_ump to current entry
+        _c_ontinue   _q_uit       _d_isplay
+        _o_ut        _t_imestamp  _r_eport
+      "
+   ("i" org-clock-in)
+   ("o" org-clock-out)
+   ("c" org-clock-in-last)
+   ("e" org-clock-modify-effort-estimate)
+   ("q" org-clock-cancel)
+   ("j" org-clock-goto)
+   ("d" org-clock-display)
+   ("r" org-clock-report)
+   ("t" org-time-stamp)
+   ("?" (org-info "Clocking commands")))
+(global-set-key (kbd "C-c o") 'hydra-org-clock/body)
+
+(global-set-key (kbd "M-S-<f6>") 'delete-indentation) ;; use M-S <f6> instead of M-S 6 (broken key on keyboard...)
+(global-set-key (kbd "<f6>") (lambda () (interactive) (insert "6")))
+(global-set-key (kbd "S-<f6>") (lambda () (interactive) (insert "^")))
+
+;; bookmarks, https://github.com/joodland/bm
+(require 'bm)
+(global-set-key (kbd "<C-f2>") 'bm-toggle)
+(global-set-key (kbd "<f2>")   'bm-next)
+(global-set-key (kbd "<S-f2>") 'bm-previous)
+(global-set-key (kbd "<left-fringe> <mouse-5>") 'bm-next-mouse)
+(global-set-key (kbd "<left-fringe> <mouse-4>") 'bm-previous-mouse)
+(global-set-key (kbd "<left-fringe> <mouse-1>") 'bm-toggle-mouse)
+(setq bm-restore-repository-on-load t) ;; restore on load (even before you require bm)
+(setq bm-cycle-all-buffers t) ;; Allow cross-buffer 'next'
+(setq bm-repository-file "~/.emacs.d/bm-repository") ;; where to store persistant files
+(setq-default bm-buffer-persistence t)  ;; save bookmarks
+(add-hook 'kill-buffer-hook #'bm-buffer-save)
+(setq bm-marker 'bm-marker-left)
+;; Saving the repository to file when on exit.
+;; kill-buffer-hook is not called when Emacs is killed, so we
+;; must save all bookmarks first.
+(add-hook 'kill-emacs-hook #'(lambda nil
+                               (bm-buffer-save-all)
+                               (bm-repository-save)))
+;; Restoring bookmarks
+(add-hook 'find-file-hooks   #'bm-buffer-restore)
+(add-hook 'after-revert-hook #'bm-buffer-restore)
+
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(TeX-source-correlate-method 'synctex)
+ '(TeX-source-correlate-mode t)
+ '(TeX-source-correlate-start-server t)
+ '(TeX-view-program-list
+   '(("Okular"
+      ("okular --unique %o#src:%n%b")
+      "/usr/bin/okular")))
+ '(TeX-view-program-selection
+   '(((output-dvi has-no-display-manager)
+      "dvi2tty")
+     ((output-dvi style-pstricks)
+      "dvips and gv")
+     (output-dvi "xdvi")
+     (output-pdf "Okular")
+     (output-html "xdg-open")))
+ '(blink-cursor-mode nil)
+ '(cider-eval-spinner-type 'vertical-breathing)
+ '(cider-inspector-fill-frame nil)
+ '(cider-lein-parameters "trampoline repl :headless")
+ '(column-number-mode t)
+ '(custom-enabled-themes '(modus-operandi))
+ '(custom-safe-themes
+   '("7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+ '(display-time-24hr-format t)
+ '(display-time-day-and-date t)
+ '(display-time-mode t)
+ '(indent-tabs-mode nil)
+ '(inhibit-startup-screen t)
+ '(initial-buffer-choice t)
+ '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
+ '(magit-todos-require-colon nil)
+ '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
+ '(neo-window-fixed-size nil)
+ '(org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
+ '(org-agenda-files
+   '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
+ '(package-check-signature nil)
+ '(package-selected-packages
+   '(calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+ '(racer-rust-src-path
+   "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
+ '(reb-re-syntax 'string)
+ '(show-paren-mode t)
+ '(sp-base-key-bindings 'sp)
+ '(speedbar-supported-extension-expressions
+   '(".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?" ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java" ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m" ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k" "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?"))
+ '(tool-bar-mode nil)
+ '(xref-js2-ignored-dirs '("bower_components" "node_modules" "build")))
