@@ -5,10 +5,9 @@
 (require 'package)  
 
 ;;;;;;; package installation urls ;;;;;;;;;;;;;;;;;;;
-(setq package-archives '(;("ELPA" . "http://tromey.com/elpa/") 
-			 ("gnu" . "http://elpa.gnu.org/packages/")
-			 ("marmalade" . "http://marmalade-repo.org/packages/")
-                         ("MELPA" . "http://melpa.org/packages/")
+(setq package-archives '(("ELPA" . "https://tromey.com/elpa/") 
+			 ("gnu" . "https://elpa.gnu.org/packages/")
+                         ("MELPA" . "https://melpa.org/packages/")
 			 ;("org" . "http://orgmode.org/elpa/")
 			 ))
 (defun ensure-package-installed (&rest packages)
@@ -20,7 +19,7 @@ Return a list of installed packages or nil for every skipped package."
      ;; (package-installed-p 'evil)
      (if (package-installed-p package)
          nil
-       (if (y-or-n-p (format "Package %s is missing. Install it? " package))
+       (if (y-or-n-p (format "Package %s is missing.  Install it? " package))
            (package-install package)
          package)))
    packages))
@@ -37,7 +36,9 @@ Return a list of installed packages or nil for every skipped package."
 (ensure-package-installed 'ido-completing-read+ 'company
 			  'smex
                           'hydra
-			  'cider
+			  'cider 'clojure-mode
+                          'company
+                          'lsp-mode 'lsp-treemacs
 			  'rainbow-delimiters
 			  'paredit
 			  'clj-refactor
@@ -54,9 +55,9 @@ Return a list of installed packages or nil for every skipped package."
 			  'org
 			  'rust-mode
 			  'js2-mode 'xref-js2
+                          'flycheck
 			  'flycheck-clj-kondo
-			  'modus-operandi-theme
-                          'modus-vivendi-theme
+			  'modus-themes
                           'bm)
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
@@ -514,6 +515,21 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (add-hook 'find-file-hooks   #'bm-buffer-restore)
 (add-hook 'after-revert-hook #'bm-buffer-restore)
 
+;; lsp-server for clojure
+(add-hook 'clojure-mode-hook 'lsp)
+(add-hook 'clojurescript-mode-hook 'lsp)
+(add-hook 'clojurec-mode-hook 'lsp)
+
+(setq gc-cons-threshold (* 100 1024 1024)
+      read-process-output-max (* 1024 1024)
+      treemacs-space-between-root-nodes nil
+      company-minimum-prefix-length 1
+      lsp-lens-enable t
+      lsp-signature-auto-activate nil
+      lsp-enable-indentation nil ; uncomment to use cider indentation instead of lsp
+      ; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
+      )
+
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -542,7 +558,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(column-number-mode t)
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+   '("21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
@@ -558,7 +574,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
    '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(lsp-treemacs lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
