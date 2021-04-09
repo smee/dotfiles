@@ -207,6 +207,8 @@ Return a list of installed packages or nil for every skipped package."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org-mode settings
+(setq org-indent-mode t)
+(setq org-startup-indented t)
 (setq org-image-actual-width (/ (display-pixel-width) 3)) ;; show inline images at 1/3rd of screen width
 (setq org-directory "~/org")
 (setq org-mobile-directory (concat org-directory "/mobileorg"))
@@ -491,6 +493,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (global-set-key (kbd "<f6>") (lambda () (interactive) (insert "6")))
 (global-set-key (kbd "S-<f6>") (lambda () (interactive) (insert "^")))
 
+(global-set-key (kbd "C-x g") 'magit-status)
 ;; bookmarks, https://github.com/joodland/bm
 (require 'bm)
 (global-set-key (kbd "<C-f2>") 'bm-toggle)
@@ -530,6 +533,48 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
       ; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
       )
 
+;; split windows should automatically use the previously visited buffer
+(defun my/split-below-last-buffer (prefix)
+    "Split the window above/below and display the previous buffer.
+If prefix arg is provided, show current buffer twice."
+    (interactive "p")
+    (split-window-below)
+    (other-window 1 nil)
+    (if (= prefix 1)
+        (switch-to-next-buffer)))
+
+(defun my/split-right-last-buffer (prefix)
+  "Split the window left/right and display the previous buffer
+If prefix arg is provided, show current buffer twice."
+  (interactive "p")
+  (split-window-right)
+  (other-window 1 nil)
+  (if (= prefix 1) (switch-to-next-buffer)))
+
+(global-set-key (kbd "C-x 2")  'my/split-below-last-buffer)
+(global-set-key (kbd "C-x 3")  'my/split-right-last-buffer)
+(setq switch-to-prev-buffer-skip 'this)
+
+;; use Windows browser to open links in WSL
+;; from https://www.reddit.com/r/bashonubuntuonwindows/comments/70i8aa/making_emacs_on_wsl_open_links_in_windows_web/
+;; Determine the specific system type. 
+;; Emacs variable system-type doesn't yet have a "wsl/linux" value,
+;; so I'm front-ending system-type with my variable: sysTypeSpecific.
+;; I'm no elisp hacker, so I'm diverging from the elisp naming convention
+;; to ensure that I'm not stepping on any pre-existing variable.
+(setq-default sysTypeSpecific system-type) ;; get the system-type value
+(cond 
+ ;; If type is "gnu/linux", override to "wsl/linux" if it's WSL.
+ ((eq sysTypeSpecific 'gnu/linux)  
+  (when (string-match "Linux.*Microsoft.*Linux" 
+                      (shell-command-to-string "uname -a"))
+    (setq-default sysTypeSpecific "wsl/linux") ;; for later use.
+    (setq cmdExeBin"/mnt/c/Windows/System32/cmd.exe"
+          cmdExeArgs '("/c" "start" "") )
+    (setq
+     browse-url-generic-program  cmdExeBin
+     browse-url-generic-args     cmdExeArgs
+     browse-url-browser-function 'browse-url-generic))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -565,6 +610,8 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
+ '(lsp-file-watch-ignored-directories
+   '("[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.git\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'"))
  '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
  '(magit-todos-require-colon nil)
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
@@ -574,7 +621,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
    '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(lsp-treemacs lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
