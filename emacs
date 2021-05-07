@@ -169,16 +169,6 @@ Return a list of installed packages or nil for every skipped package."
 ;; looong history
 (setq cider-repl-history-size 3000)
 
-;; enable figwheel CLJS repl in active NREPL connection
-(defun cider-figwheel-repl ()
-  (interactive)
-  (save-some-buffers)
-  (with-current-buffer (cider-current-repl-buffer)
-    (goto-char (point-max))
-    (insert "(require 'figwheel-sidecar.repl-api)
-             (figwheel-sidecar.repl-api/cljs-repl)")
-    (cider-repl-return)))
-(global-set-key (kbd "C-c C-f") 'cider-figwheel-repl)
 ;; clj-refactor and dependencies
 (require 'clj-refactor)
 
@@ -189,9 +179,6 @@ Return a list of installed packages or nil for every skipped package."
 
 (global-set-key [f8] 'other-frame)
 (global-set-key [f7] 'paredit-mode)
-(global-set-key [f9] 'cider-jack-in)
-(global-set-key [f10] 'cider-figwheel-repl)
-
 
 ;; scroll one line at a time (less "jumpy" than defaults)
 
@@ -532,28 +519,6 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
       lsp-enable-indentation nil ; uncomment to use cider indentation instead of lsp
       ; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
       )
-
-;; split windows should automatically use the previously visited buffer
-(defun my/split-below-last-buffer (prefix)
-    "Split the window above/below and display the previous buffer.
-If prefix arg is provided, show current buffer twice."
-    (interactive "p")
-    (split-window-below)
-    (other-window 1 nil)
-    (if (= prefix 1)
-        (switch-to-next-buffer)))
-
-(defun my/split-right-last-buffer (prefix)
-  "Split the window left/right and display the previous buffer
-If prefix arg is provided, show current buffer twice."
-  (interactive "p")
-  (split-window-right)
-  (other-window 1 nil)
-  (if (= prefix 1) (switch-to-next-buffer)))
-
-(global-set-key (kbd "C-x 2")  'my/split-below-last-buffer)
-(global-set-key (kbd "C-x 3")  'my/split-right-last-buffer)
-(setq switch-to-prev-buffer-skip 'this)
 
 ;; use Windows browser to open links in WSL
 ;; from https://www.reddit.com/r/bashonubuntuonwindows/comments/70i8aa/making_emacs_on_wsl_open_links_in_windows_web/
