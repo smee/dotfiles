@@ -2,7 +2,7 @@
 (let ((default-directory "~/.emacs.d/lisp/"))
   (normal-top-level-add-subdirs-to-load-path)) 
 ;; ensure elpa packages get loaded
-(require 'package)  
+(require 'package)
 
 ;;;;;;; package installation urls ;;;;;;;;;;;;;;;;;;;
 (setq package-archives '(("ELPA" . "https://tromey.com/elpa/") 
@@ -30,7 +30,7 @@ Return a list of installed packages or nil for every skipped package."
     (package-refresh-contents))
 
 ;; activate installed packagesf
-(package-initialize) 
+(package-initialize)
 (add-to-list 'package-pinned-packages '(cider . "MELPA") t)
 
 (ensure-package-installed 'ido-completing-read+ 'company
@@ -58,7 +58,12 @@ Return a list of installed packages or nil for every skipped package."
                           'flycheck
 			  'flycheck-clj-kondo
 			  'modus-themes
-                          'bm)
+                          'bm
+                          'use-package)
+
+(eval-when-compile
+  (require 'use-package))
+  
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
@@ -75,36 +80,40 @@ Return a list of installed packages or nil for every skipped package."
 (require 'magit-todos)
 (magit-todos-mode 1)
 
-;; use ido-mode everywhere
-(ido-mode t)
-(ido-everywhere t)
+(use-package ido
+  :init
+  ;; use ido-mode everywhere
+  (ido-mode t)
+  (ido-everywhere t)
+  (setq ido-enable-prefix nil
+        ido-enable-flex-matching t
+        ido-auto-merge-work-directories-length nil
+        ido-create-new-buffer 'always
+        ido-use-filename-at-point 'guess
+        ido-use-virtual-buffers t
+        ido-handle-duplicate-virtual-buffers 2
+        ido-max-prospects 10
+        ido-work-directory-list '("~/" "/home/steffen/Dropbox/workspaces/current-workspace")))
+
 (require 'ido-completing-read+)
 (ido-ubiquitous-mode 1)
 
-(setq ido-enable-prefix nil
-      ido-enable-flex-matching t
-      ido-auto-merge-work-directories-length nil
-      ido-create-new-buffer 'always
-      ido-use-filename-at-point 'guess
-      ido-use-virtual-buffers t
-      ido-handle-duplicate-virtual-buffers 2
-      ido-max-prospects 10
-      ido-work-directory-list '("~/" "/home/steffen/Dropbox/workspaces/current-workspace"))
+(use-package smex
+  :init
+  ;; smex, like ido for M-x
+  (global-set-key [(meta x)] (lambda ()
+                               (interactive)
+                               (or (boundp 'smex-cache)
+                                   (smex-initialize))
+                               (global-set-key [(meta x)] 'smex)
+                               (smex)))
 
-;; smex, like ido for M-x
-(global-set-key [(meta x)] (lambda ()
-                             (interactive)
-                             (or (boundp 'smex-cache)
-                                 (smex-initialize))
-                             (global-set-key [(meta x)] 'smex)
-                             (smex)))
-
-(global-set-key [(shift meta x)] (lambda ()
-                                   (interactive)
-                                   (or (boundp 'smex-cache)
-                                       (smex-initialize))
-                                   (global-set-key [(shift meta x)] 'smex-major-mode-commands)
-                                   (smex-major-mode-commands)))
+  (global-set-key [(shift meta x)] (lambda ()
+                                     (interactive)
+                                     (or (boundp 'smex-cache)
+                                         (smex-initialize))
+                                     (global-set-key [(shift meta x)] 'smex-major-mode-commands)
+                                     (smex-major-mode-commands))))
 (when window-system
   (setq frame-title-format '(buffer-file-name "%f" ("%b")))
   (tooltip-mode -1)
@@ -194,107 +203,137 @@ Return a list of installed packages or nil for every skipped package."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org-mode settings
-(setq org-indent-mode t)
-(setq org-startup-indented t)
-(setq org-image-actual-width (/ (display-pixel-width) 3)) ;; show inline images at 1/3rd of screen width
-(setq org-directory "~/org")
-(setq org-mobile-directory (concat org-directory "/mobileorg"))
-(setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
-(setq org-mobile-inbox-for-pull (concat org-directory "/inbox.org"))
-(setq org-default-notes-file (concat org-directory "/notes.org"))
-(define-key global-map "\C-cc" 'org-capture)
-(define-key global-map "\C-ca" 'org-agenda)
-(setq org-todo-keywords
-      (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
-              (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
+(use-package org
+  :mode (("\\.org$" . org-mode))
+  :bind (("\C-cc" . org-capture)
+         ("\C-ca" . org-agenda))
+  :init
+  (setq org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
+  (setq org-agenda-files '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
+  (setq org-indent-mode t)
+  (setq org-startup-indented t)
+  (setq org-image-actual-width (/ (display-pixel-width) 3)) ;; show inline images at 1/3rd of screen width
+  (setq org-directory "~/org")
+  (setq org-mobile-directory (concat org-directory "/mobileorg"))
+  (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
+  (setq org-mobile-inbox-for-pull (concat org-directory "/inbox.org"))
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  
+  (setq org-todo-keywords
+        (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+                (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
 
-(setq org-capture-templates
-      '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
-	 "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
-	("m" "Meeting" entry (file+headline "notes.org" "Meetings")
-	 "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
-	("p" "Phone call" entry (file+headline "notes.org" "Calls")
-	 "* PHONE %? %U :PHONE:\n" :clock-in t :clock-resume t)
-        ("j" "Journal" entry (file+datetree "tagebuch.org")
-	 "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
-
-
-(setq org-todo-keyword-faces
-      (quote (("TODO" :foreground "red" :weight bold)
-              ("NEXT" :foreground "blue" :weight bold)
-              ("DONE" :foreground "forest green" :weight bold)
-              ("WAITING" :foreground "orange" :weight bold)
-              ("HOLD" :foreground "magenta" :weight bold)
-              ("CANCELLED" :foreground "forest green" :weight bold)
-              ("MEETING" :foreground "forest green" :weight bold)
-              ("PHONE" :foreground "forest green" :weight bold))))
+  (setq org-capture-templates
+        '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
+	   "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
+	  ("m" "Meeting" entry (file+headline "notes.org" "Meetings")
+	   "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
+	  ("p" "Phone call" entry (file+headline "notes.org" "Calls")
+	   "* PHONE %? %U :PHONE:\n" :clock-in t :clock-resume t)
+          ("j" "Journal" entry (file+datetree "tagebuch.org")
+	   "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
 
 
-(setq org-mobile-force-id-on-agenda-items nil)
-;; custom agendas for mobileorg
-(setq org-agenda-custom-commands
-      '(("w" todo "TODO")
-	("A" agenda "today"
-	 ((org-agenda-ndays 1)
-	  (org-agenda-overriding-header "Today")))))
+  (setq org-todo-keyword-faces
+        (quote (("TODO" :foreground "red" :weight bold)
+                ("NEXT" :foreground "blue" :weight bold)
+                ("DONE" :foreground "forest green" :weight bold)
+                ("WAITING" :foreground "orange" :weight bold)
+                ("HOLD" :foreground "magenta" :weight bold)
+                ("CANCELLED" :foreground "forest green" :weight bold)
+                ("MEETING" :foreground "forest green" :weight bold)
+                ("PHONE" :foreground "forest green" :weight bold))))
+
+
+  (setq org-mobile-force-id-on-agenda-items nil)
+  ;; custom agendas for mobileorg
+  (setq org-agenda-custom-commands
+        '(("w" todo "TODO")
+	  ("A" agenda "today"
+	   ((org-agenda-ndays 1)
+	    (org-agenda-overriding-header "Today")))))
 
 ;;;;; reviews for different time intervals, from https://stackoverflow.com/a/22440571
-;; define "R" as the prefix key for reviewing what happened in various
-;; time periods
-(add-to-list 'org-agenda-custom-commands
-             '("R" . "Review" )
-             )
+  ;; define "R" as the prefix key for reviewing what happened in various
+  ;; time periods
+  (add-to-list 'org-agenda-custom-commands
+               '("R" . "Review" )
+               )
 
-;; Common settings for all reviews
-(setq efs/org-agenda-review-settings
-      '((org-agenda-show-all-dates t)
-        (org-agenda-start-with-log-mode t)
-        (org-agenda-start-with-clockreport-mode t)
-        (org-agenda-archives-mode t)
-        ;; I don't care if an entry was archived
-        (org-agenda-hide-tags-regexp
-         (concat org-agenda-hide-tags-regexp "\\|ARCHIVE"))))
-;; Show the agenda with the log turn on, the clock table show and
-;; archived entries shown.  These commands are all the same exept for
-;; the time period.
-(add-to-list 'org-agenda-custom-commands
-             `("Rw" "Week in review"
-                agenda ""
-                ;; agenda settings
-                ,(append
-                  efs/org-agenda-review-settings
-                  '((org-agenda-span 'week)
-                    (org-agenda-start-on-weekday 0)
-                    (org-agenda-overriding-header "Week in Review")))
-                ("~/org/review/week.html")))
+  ;; Common settings for all reviews
+  (setq efs/org-agenda-review-settings
+        '((org-agenda-show-all-dates t)
+          (org-agenda-start-with-log-mode t)
+          (org-agenda-start-with-clockreport-mode t)
+          (org-agenda-archives-mode t)
+          ;; I don't care if an entry was archived
+          (org-agenda-hide-tags-regexp
+           (concat org-agenda-hide-tags-regexp "\\|ARCHIVE"))))
+  ;; Show the agenda with the log turn on, the clock table show and
+  ;; archived entries shown.  These commands are all the same exept for
+  ;; the time period.
+  (add-to-list 'org-agenda-custom-commands
+               `("Rw" "Week in review"
+                 agenda ""
+                 ;; agenda settings
+                 ,(append
+                   efs/org-agenda-review-settings
+                   '((org-agenda-span 'week)
+                     (org-agenda-start-on-weekday 0)
+                     (org-agenda-overriding-header "Week in Review")))
+                 ("~/org/review/week.html")))
 
+  (add-to-list 'org-agenda-custom-commands
+               `("Rd" "Day in review"
+                 agenda ""
+                 ;; agenda settings
+                 ,(append
+                   efs/org-agenda-review-settings
+                   '((org-agenda-span 'day)
+                     (org-agenda-overriding-header "Day in Review")))
+                 ("~/org/review/day.html")))
 
-(add-to-list 'org-agenda-custom-commands
-             `("Rd" "Day in review"
-                agenda ""
-                ;; agenda settings
-                ,(append
-                  efs/org-agenda-review-settings
-                  '((org-agenda-span 'day)
-                    (org-agenda-overriding-header "Day in Review")))
-                ("~/org/review/day.html")))
+  (add-to-list 'org-agenda-custom-commands
+               `("Rm" "Month in review"
+                 agenda ""
+                 ;; agenda settings
+                 ,(append
+                   efs/org-agenda-review-settings
+                   '((org-agenda-span 'month)
+                     (org-agenda-start-day "01")
+                     (org-read-date-prefer-future nil)
+                     (org-agenda-overriding-header "Month in Review")))
+                 ("~/org/review/month.html")))
+  ;; show all nested sections when refiling
+  (setq org-refile-targets '((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
+  (setq org-refile-use-outline-path t)                  ; Show full paths for refiling
+  (setq org-outline-path-complete-in-steps nil) ; Refile in a single go
+  :config
+  (defun org-outlook-open (id)
+    "Open the Outlook item identified by ID.  ID should be an Outlook GUID."
+    ;; 2017-03-02: following line stopped working with "org-outlook-open: ShellExecute failed: Access is denied."
+    ;;(w32-shell-execute "open" (concat "outlook:" id))
+    ;; fix:
+    (if (boundp 'w32-shell-execute)
+        (w32-shell-execute "open"
+                           "C:/Program Files/Microsoft Office/root/Office16/OUTLOOK.EXE"
+                           (concat "/select " "outlook:" id))
+      (shell-command (concat "/mnt/c/Program\\ Files/Microsoft\\ Office/root/Office16/OUTLOOK.EXE /select outlook:" id))))
+  (org-add-link-type "outlook" 'org-outlook-open)
+  )         
 
-(add-to-list 'org-agenda-custom-commands
-             `("Rm" "Month in review"
-                agenda ""
-                ;; agenda settings
-                ,(append
-                  efs/org-agenda-review-settings
-                  '((org-agenda-span 'month)
-                    (org-agenda-start-day "01")
-                    (org-read-date-prefer-future nil)
-                    (org-agenda-overriding-header "Month in Review")))
-                ("~/org/review/month.html")))
-;; show all nested sections when refiling
-(setq org-refile-targets '((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
-(setq org-refile-use-outline-path t)                  ; Show full paths for refiling
-(setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
-
+(use-package org-duration
+  :config
+  ;; work day is 8 hours
+    (setq org-duration-units ;; each unit is in minutes
+      '(("min" . 1)
+        ("h" . 60)
+        (" AT" . 480)
+        ("d" . 1440)
+        ("m" . 43200)
+        ("y" . 525960.0)))
+    ;; show clock table durations in work days (Arbeitstage)
+    (setq org-duration-format '((" AT") (special . h:mm))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Enable column number mode
 (column-number-mode t)
@@ -319,36 +358,41 @@ Return a list of installed packages or nil for every skipped package."
 (winner-mode t)
 
 ;;recentf
-(require 'recentf)
-(recentf-mode 1)
-(setq recentf-max-saved-items 500)
-(setq recentf-max-menu-items 60)
-(global-set-key [(f12)] 'recentf-open-files)
+(use-package recentf
+  :init
+  (recentf-mode 1)
+  (setq recentf-max-saved-items 500)
+  (setq recentf-max-menu-items 60)
+  (global-set-key [(f12)] 'recentf-open-files))
 ;; ace-jump
-(require 'ace-jump-mode)
-(setq ace-jump-mode-submode-list
-      '(ace-jump-char-mode              ;; the first one always map to : C-c j 
-	ace-jump-word-mode              ;; the second one always map to: C-u C-c j            
-        ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c j)
-(define-key global-map (kbd "C-c j") 'ace-jump-mode)
-;; jump back to position before last ace-mode jump with "C-x SPC"
-(autoload
-   'ace-jump-mode-pop-mark
-   "ace-jump-mode"
-   "Ace jump back:-)"
-   t)
- (eval-after-load "ace-jump-mode"
-   '(ace-jump-mode-enable-mark-sync))
- (define-key global-map (kbd "C-x j") 'ace-jump-mode-pop-mark)
+(use-package ace-jump-mode
+  :bind (("C-c j" . ace-jump-mode)
+         ("C-x j" . ace-jump-mode-pop-mark))
+  :init
+  (setq ace-jump-mode-submode-list
+        '(ace-jump-char-mode              ;; the first one always map to : C-c j 
+	  ace-jump-word-mode              ;; the second one always map to: C-u C-c j            
+          ace-jump-line-mode))           ;; the third one always map to ：C-u C-u C-c j)
+  :config
+  (ace-jump-mode-enable-mark-sync)
+  ;; jump back to position before last ace-mode jump with "C-x SPC"
+  (autoload
+    'ace-jump-mode-pop-mark
+    "ace-jump-mode"
+    "Ace jump back:-)"
+    t)
+  )
  
 ;; ace-window
-(require 'ace-window)
-(define-key global-map (kbd "M-p") 'ace-window)
+(use-package ace-window
+  :bind ("M-p" . ace-window))
 
 ;; remember places in open files
-(require 'saveplace)
-(setq-default save-place t)
-(setq save-place-file (expand-file-name ".places" user-emacs-directory))
+(use-package saveplace
+  :init  
+  (setq save-place-file (expand-file-name ".places" user-emacs-directory))
+  :config
+  (setq-default save-place t))
 
 (autoload 'markdown-mode "markdown-mode"
         "Major mode for editing Markdown files" t)
@@ -363,14 +407,17 @@ Return a list of installed packages or nil for every skipped package."
  )
 ;; expand-region for expanding/contracting selections according to nested semantic entities
 (global-set-key (kbd "M-2") 'er/expand-region)
-(global-set-key (kbd "M-3") 'er/contract-region)     
+(global-set-key (kbd "M-3") 'er/contract-region)
 
 (global-visual-line-mode)
 ;; bind M-/ to hippie expand
 (global-set-key (kbd "M-/") #'hippie-expand)
-;; enable projectile project manager mode globally
-(projectile-mode)
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+(use-package projectile
+  :bind-keymap ("C-c p" . projectile-command-map)
+  :config
+  ;; enable projectile project manager mode globally
+  (projectile-mode))
+
 ;; do not create file~ everywhere
 (setq make-backup-files nil)
 
@@ -429,19 +476,6 @@ nothing happens."
 (require 'flycheck-clj-kondo)
 (global-flycheck-mode)
 
-(defun org-outlook-open (id)
-  "Open the Outlook item identified by ID.  ID should be an Outlook GUID."
-  ;; 2017-03-02: following line stopped working with "org-outlook-open: ShellExecute failed: Access is denied."
-  ;;(w32-shell-execute "open" (concat "outlook:" id))
-  ;; fix:
-  (if (boundp 'w32-shell-execute)
-      (w32-shell-execute "open"
-                     "C:/Program Files/Microsoft Office/root/Office16/OUTLOOK.EXE"
-                     (concat "/select " "outlook:" id))
-      (shell-command (concat "/mnt/c/Program\\ Files/Microsoft\\ Office/root/Office16/OUTLOOK.EXE /select outlook:" id))))
-
-(org-add-link-type "outlook" 'org-outlook-open)
-
 ;; VcXrc under Windows won't toggle keyboard layouts, so let's make it easier to insert german umlauts
 (defhydra hydra-umlauts ()
   "Umlaute"
@@ -452,7 +486,9 @@ nothing happens."
   ("[" (insert "ü") "ü")
   ("{" (insert "Ü") "Ü")
   ("-" (insert "ß") "ß")
-  ("E" (insert "€") "€"))
+  ("E" (insert "€") "€")
+  ("2" (insert "²") "²")
+  ("3" (insert "³") "³"))
 (global-set-key (kbd "C-;") 'hydra-umlauts/body)
 
 
@@ -513,12 +549,12 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (setq gc-cons-threshold (* 100 1024 1024)
       read-process-output-max (* 1024 1024)
       treemacs-space-between-root-nodes nil
-      company-minimum-prefix-length 1
+      company-minimum-prefix-length 3
       lsp-lens-enable t
       lsp-signature-auto-activate nil
       lsp-enable-indentation nil ; uncomment to use cider indentation instead of lsp
       ; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
-      )
+      lsp-modeline-code-actions-enable nil)
 
 ;; use Windows browser to open links in WSL
 ;; from https://www.reddit.com/r/bashonubuntuonwindows/comments/70i8aa/making_emacs_on_wsl_open_links_in_windows_web/
@@ -572,6 +608,8 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
+ '(grep-find-ignored-directories
+   '("SCCS" "RCS" "CVS" "MCVS" ".src" ".svn" ".git" ".hg" ".bzr" "_MTN" "_darcs" "{arch}" ".clj-kondo" ".shadow-cljs" "target" "node_modules"))
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
@@ -581,12 +619,9 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(magit-todos-require-colon nil)
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
- '(org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
- '(org-agenda-files
-   '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(use-package lsp-java lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
