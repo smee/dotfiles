@@ -194,3 +194,5 @@ export TERM=xterm-256color
 # diable XOFF, else Ctrl+s will completely block the terminal, needs a Ctrl+q to unlock
 # only if the current shell is interactive (else we see the error "stty: 'standard input': Inappropriate ioctl for device")
 [[ $- == *i* ]] && stty -ixon
+# direnv for directory specific environment variables, see https://direnv.net/
+command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"
