@@ -9,7 +9,8 @@
 			 ("gnu" . "https://elpa.gnu.org/packages/")
                          ("MELPA" . "https://melpa.org/packages/")
 			 ;("org" . "http://orgmode.org/elpa/")
-			 ))
+                         ))
+
 (defun ensure-package-installed (&rest packages)
   "Assure every package is installed, ask for installation if it’s not.
 
@@ -38,7 +39,7 @@ Return a list of installed packages or nil for every skipped package."
                           'hydra
 			  'cider 'clojure-mode
                           'company
-                          'lsp-mode 'lsp-treemacs
+                          'lsp-mode 'lsp-ui 'lsp-treemacs
 			  'rainbow-delimiters
 			  'paredit
 			  'clj-refactor
@@ -52,18 +53,62 @@ Return a list of installed packages or nil for every skipped package."
 			  'which-key
 			  'ido
 			  'ido-ubiquitous
-			  'org
+			  'org 'german-holidays
 			  'rust-mode
 			  'js2-mode 'xref-js2
-                          'flycheck
-			  'flycheck-clj-kondo
 			  'modus-themes
                           'bm
-                          'use-package)
+                          'use-package
+                          'quelpa 'quelpa-use-package
+                          'helm-org
+                          'org-ql ;; caution: org-ql MUST be installed after helm-org for org-super-links to work
+                          )
 
 (eval-when-compile
   (require 'use-package))
-  
+
+(use-package quelpa
+:ensure t
+:config (setq quelpa-upgrade-interval 7);; upgrade all packages once a week according to https://github.com/quelpa/quelpa
+(add-hook #'after-init-hook #'quelpa-upgrade-all-maybe))
+
+(use-package quelpa-use-package :ensure t)
+(use-package helm-org-ql
+ :config
+ (setq org-ql-search-directories-files-regexp "\.org\\(_archive\\)?$"))
+
+(use-package org-super-links
+:quelpa (org-super-links :repo "toshism/org-super-links" :fetcher github :commit "0.2")
+:bind (("C-c s s" . sl-link)
+       ("C-c s l" . sl-store-link)
+       ("C-c s C-l" . sl-insert-link)))
+
+(use-package lsp-mode
+  :commands lsp
+  :hook ((clojure-mode . lsp)
+         (clojurescript-mode . lsp)
+         (clojurec-mode . lsp)
+         (zig-mode . lsp))
+  :config (setq gc-cons-threshold (* 100 1024 1024)
+                read-process-output-max (* 1024 1024)                
+                lsp-lens-enable t
+                lsp-semantic-tokens-enable nil
+                lsp-signature-auto-activate nil
+                lsp-enable-indentation nil 
+                ;; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
+                lsp-modeline-code-actions-enable nil)
+  (setq lsp-zig-zls-executable "~/zig/zls/bin/zls")
+  (setq lsp-file-watch-ignored-directories
+   '("[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.git\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'")))
+
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-sideline-enable nil))
+
+(use-package lsp-treemacs
+  :config (setq treemacs-space-between-root-nodes nil))
+
 ;; show available key bindings when pressing any registered prefix
 (which-key-mode t)
 
@@ -77,8 +122,21 @@ Return a list of installed packages or nil for every skipped package."
 ;; highlight matching parentheses
 (show-paren-mode 1)
 
-(require 'magit-todos)
-(magit-todos-mode 1)
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status))
+  :custom
+  (magit-refs-sections-hook '(magit-insert-error-header
+                              magit-insert-branch-description
+                              magit-insert-local-branches
+                              ;;magit-insert-remote-branches
+                              )))
+(use-package magit-todos
+  :init
+  (magit-todos-mode 1)
+  :custom
+  (magit-todos-require-colon nil)
+  (magit-todos-keyword-suffix "" nil nil "do not use any suffixes"))
 
 (use-package ido
   :init
@@ -150,7 +208,6 @@ Return a list of installed packages or nil for every skipped package."
 							   "\u03bb") nil))))))
 (defun my-clojure-configuration ()
   (esk-pretty-fn)
-  (turn-on-eldoc-mode)
   (remove-dos-eol)
   (clj-refactor-mode 1)
   (cljr-add-keybindings-with-prefix "C-c RET")
@@ -159,24 +216,32 @@ Return a list of installed packages or nil for every skipped package."
   (hl-sexp-mode 1)
   (company-mode 1))
 
-(global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+(use-package company
+  :ensure t
+  :bind (("TAB" . company-indent-or-complete-common))
+  :init  
+  (setq company-tooltip-align-annotations t)
+  (setq company-minimum-prefix-length 3)
+  (setq company-idle-delay 2)
+  :config (add-hook 'racer-mode-hook #'company-mode))
+
 (global-set-key (kbd "<f5>") #'hs-toggle-hiding)
-;; REPL history file
-(setq cider-repl-history-file "~/.emacs.d/cider-history")
-;; nice pretty printing
-(setq cider-repl-use-pretty-printing t)
-
-;; nicer font lock in REPL
-(setq cider-repl-use-clojure-font-lock t)
-
-;; result prefix for the REPL
-(setq cider-repl-result-prefix ";; => ")
-
-;; never ending REPL history
-(setq cider-repl-wrap-history t)
-
-;; looong history
-(setq cider-repl-history-size 3000)
+(use-package cider
+  :config 
+  ;; REPL history file
+  (setq cider-repl-history-file "~/.emacs.d/cider-history")
+  ;; nice pretty printing
+  (setq cider-repl-use-pretty-printing t)
+  ;; nicer font lock in REPL
+  (setq cider-repl-use-clojure-font-lock t)
+  ;; result prefix for the REPL
+  (setq cider-repl-result-prefix ";; => ")
+  ;; never ending REPL history
+  (setq cider-repl-wrap-history t)
+  ;; looong history
+  (setq cider-repl-history-size 3000)
+  (setq cider-eldoc-display-for-symbol-at-point nil) ;; disable cider documentation popups, use lsp-ui instead
+  )
 
 ;; clj-refactor and dependencies
 (require 'clj-refactor)
@@ -204,36 +269,22 @@ Return a list of installed packages or nil for every skipped package."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org-mode settings
 (use-package org
-  :mode (("\\.org$" . org-mode))
-  :bind (("\C-cc" . org-capture)
-         ("\C-ca" . org-agenda))
+  :mode (("\\.org$" . org-mode)
+         ("\\.org_archive$" . org-mode))
   :init
-  (setq org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
-  (setq org-agenda-files '("~/org/notes.org" "~/org/notes-urz.org" "~/org/tagebuch.org"))
   (setq org-indent-mode t)
   (setq org-startup-indented t)
   (setq org-image-actual-width (/ (display-pixel-width) 3)) ;; show inline images at 1/3rd of screen width
   (setq org-directory "~/org")
+  (setq org-agenda-files (list org-directory))
   (setq org-mobile-directory (concat org-directory "/mobileorg"))
-  (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
   (setq org-mobile-inbox-for-pull (concat org-directory "/inbox.org"))
   (setq org-default-notes-file (concat org-directory "/notes.org"))
-  
+  (setq org-agenda-include-diary t) ;; show holidays
+  (setq org-hide-emphasis-markers t) ;; hide *bold* markers
   (setq org-todo-keywords
         (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
                 (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
-
-  (setq org-capture-templates
-        '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
-	   "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
-	  ("m" "Meeting" entry (file+headline "notes.org" "Meetings")
-	   "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
-	  ("p" "Phone call" entry (file+headline "notes.org" "Calls")
-	   "* PHONE %? %U :PHONE:\n" :clock-in t :clock-resume t)
-          ("j" "Journal" entry (file+datetree "tagebuch.org")
-	   "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t)))
-
-
   (setq org-todo-keyword-faces
         (quote (("TODO" :foreground "red" :weight bold)
                 ("NEXT" :foreground "blue" :weight bold)
@@ -243,17 +294,67 @@ Return a list of installed packages or nil for every skipped package."
                 ("CANCELLED" :foreground "forest green" :weight bold)
                 ("MEETING" :foreground "forest green" :weight bold)
                 ("PHONE" :foreground "forest green" :weight bold))))
-
-
   (setq org-mobile-force-id-on-agenda-items nil)
+  ;; show all nested sections when refiling
+  (setq org-refile-targets '((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
+  (setq org-refile-use-outline-path t)                  ; Show full paths for refiling
+  (setq org-outline-path-complete-in-steps nil) ; Refile in a single go
+  :config
+  (defun org-outlook-open (id)
+    "Open the Outlook item identified by ID.  ID should be an Outlook GUID."
+    ;; 2017-03-02: following line stopped working with "org-outlook-open: ShellExecute failed: Access is denied."
+    ;;(w32-shell-execute "open" (concat "outlook:" id))
+    ;; fix:
+    (if (boundp 'w32-shell-execute)
+        (w32-shell-execute "open"
+                           "C:/Program Files/Microsoft Office/root/Office16/OUTLOOK.EXE"
+                           (concat "/select " "outlook:" id))
+      (shell-command (concat "/mnt/c/Program\\ Files/Microsoft\\ Office/root/Office16/OUTLOOK.EXE /select outlook:" id))))
+  (org-add-link-type "outlook" 'org-outlook-open)
+  )
+
+(use-package org-id
+  :after org
+  :config
+  (setq org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id))
+
+
+(use-package org-indent
+  :after org
+  :ensure nil
+  :diminish ;; don't show "Ind" in the modeline
+  :custom
+  (org-indent-indentation-per-level 2))
+
+(use-package org-capture
+  :after org
+  :bind (("\C-cc" . org-capture))
+  :config
+  (setq org-capture-templates
+        '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
+	   "* TODO %?\n  %i\n  %a"  :clock-in t :clock-resume t)
+	  ("m" "Meeting" entry (file+headline "notes.org" "Meetings")
+	   "* MEETING %? %U :MEETING:\n" :clock-in t :clock-resume t)
+	  ("p" "Phone call" entry (file+headline "notes.org" "Calls")
+	   "* PHONE %? %U :PHONE:\n" :clock-in t :clock-resume t)
+          ("j" "Journal" entry (file+datetree "tagebuch.org")
+	   "* %?\nEntered on %U\n  %i\n  %a" :clock-in t :clock-resume t))))
+
+(use-package org-agenda
+  :ensure nil
+  :after org
+  :bind
+  ("C-c a" . org-agenda)
+  :config
+  (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
+  (setq org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
   ;; custom agendas for mobileorg
   (setq org-agenda-custom-commands
         '(("w" todo "TODO")
 	  ("A" agenda "today"
 	   ((org-agenda-ndays 1)
 	    (org-agenda-overriding-header "Today")))))
-
-;;;;; reviews for different time intervals, from https://stackoverflow.com/a/22440571
+  ;;;;; reviews for different time intervals, from https://stackoverflow.com/a/22440571
   ;; define "R" as the prefix key for reviewing what happened in various
   ;; time periods
   (add-to-list 'org-agenda-custom-commands
@@ -304,23 +405,7 @@ Return a list of installed packages or nil for every skipped package."
                      (org-read-date-prefer-future nil)
                      (org-agenda-overriding-header "Month in Review")))
                  ("~/org/review/month.html")))
-  ;; show all nested sections when refiling
-  (setq org-refile-targets '((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
-  (setq org-refile-use-outline-path t)                  ; Show full paths for refiling
-  (setq org-outline-path-complete-in-steps nil) ; Refile in a single go
-  :config
-  (defun org-outlook-open (id)
-    "Open the Outlook item identified by ID.  ID should be an Outlook GUID."
-    ;; 2017-03-02: following line stopped working with "org-outlook-open: ShellExecute failed: Access is denied."
-    ;;(w32-shell-execute "open" (concat "outlook:" id))
-    ;; fix:
-    (if (boundp 'w32-shell-execute)
-        (w32-shell-execute "open"
-                           "C:/Program Files/Microsoft Office/root/Office16/OUTLOOK.EXE"
-                           (concat "/select " "outlook:" id))
-      (shell-command (concat "/mnt/c/Program\\ Files/Microsoft\\ Office/root/Office16/OUTLOOK.EXE /select outlook:" id))))
-  (org-add-link-type "outlook" 'org-outlook-open)
-  )         
+  )
 
 (use-package org-duration
   :config
@@ -334,6 +419,11 @@ Return a list of installed packages or nil for every skipped package."
         ("y" . 525960.0)))
     ;; show clock table durations in work days (Arbeitstage)
     (setq org-duration-format '((" AT") (special . h:mm))))
+
+(use-package holidays
+  :init (require 'german-holidays)
+  :config
+  (setq calendar-holidays holiday-german-holidays))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Enable column number mode
 (column-number-mode t)
@@ -456,10 +546,10 @@ nothing happens."
 ;; Rust support
 (add-hook 'rust-mode-hook #'racer-mode)
 (add-hook 'racer-mode-hook #'eldoc-mode)
-(add-hook 'racer-mode-hook #'company-mode)
+
 (require 'rust-mode)
-(define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
-(setq company-tooltip-align-annotations t)
+
+
 ;; toggle line wrap for long lines, easier when printing very wide tables
 (global-set-key (kbd "C-c w") 'toggle-truncate-lines)
 
@@ -472,9 +562,6 @@ nothing happens."
 (define-key js-mode-map (kbd "M-.") nil)
 ;; make sure we use xref-js2 to jump to definitions
 (add-hook 'js2-mode-hook (lambda () (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
-;; check clj/cljc/cljs files with clj-kondo https://github.com/borkdude/flycheck-clj-kondo
-(require 'flycheck-clj-kondo)
-(global-flycheck-mode)
 
 ;; VcXrc under Windows won't toggle keyboard layouts, so let's make it easier to insert german umlauts
 (defhydra hydra-umlauts ()
@@ -499,6 +586,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
         _i_n         _e_dit       _j_ump to current entry
         _c_ontinue   _q_uit       _d_isplay
         _o_ut        _t_imestamp  _r_eport
+        _q_uery
       "
    ("i" org-clock-in)
    ("o" org-clock-out)
@@ -509,6 +597,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
    ("d" org-clock-display)
    ("r" org-clock-report)
    ("t" org-time-stamp)
+   ("q" helm-org-ql)
    ("?" (org-info "Clocking commands")))
 (global-set-key (kbd "C-c o") 'hydra-org-clock/body)
 
@@ -516,7 +605,6 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (global-set-key (kbd "<f6>") (lambda () (interactive) (insert "6")))
 (global-set-key (kbd "S-<f6>") (lambda () (interactive) (insert "^")))
 
-(global-set-key (kbd "C-x g") 'magit-status)
 ;; bookmarks, https://github.com/joodland/bm
 (require 'bm)
 (global-set-key (kbd "<C-f2>") 'bm-toggle)
@@ -541,20 +629,6 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (add-hook 'find-file-hooks   #'bm-buffer-restore)
 (add-hook 'after-revert-hook #'bm-buffer-restore)
 
-;; lsp-server for clojure
-(add-hook 'clojure-mode-hook 'lsp)
-(add-hook 'clojurescript-mode-hook 'lsp)
-(add-hook 'clojurec-mode-hook 'lsp)
-
-(setq gc-cons-threshold (* 100 1024 1024)
-      read-process-output-max (* 1024 1024)
-      treemacs-space-between-root-nodes nil
-      company-minimum-prefix-length 3
-      lsp-lens-enable t
-      lsp-signature-auto-activate nil
-      lsp-enable-indentation nil ; uncomment to use cider indentation instead of lsp
-      ; lsp-enable-completion-at-point nil ; uncomment to use cider completion instead of lsp
-      lsp-modeline-code-actions-enable nil)
 
 ;; use Windows browser to open links in WSL
 ;; from https://www.reddit.com/r/bashonubuntuonwindows/comments/70i8aa/making_emacs_on_wsl_open_links_in_windows_web/
@@ -602,6 +676,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(cider-inspector-fill-frame nil)
  '(cider-lein-parameters "trampoline repl :headless")
  '(column-number-mode t)
+ '(company-idle-delay 2)
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
    '("21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
@@ -613,15 +688,11 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
- '(lsp-file-watch-ignored-directories
-   '("[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.git\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'"))
- '(magit-todos-keyword-suffix "" nil nil "do not use any suffixes")
- '(magit-todos-require-colon nil)
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
  '(package-check-signature nil)
  '(package-selected-packages
-   '(use-package lsp-java lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode org paredit which-key helm racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(org-ql helm-org-ql helm-org quelpa quelpa-use-package org-download lua-mode german-holidays lsp-ui zig-mode use-package lsp-java lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
