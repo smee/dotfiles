@@ -125,6 +125,8 @@ Return a list of installed packages or nil for every skipped package."
 (use-package magit
   :ensure t
   :bind (("C-x g" . magit-status))
+  :init
+  (setq magit-log-margin '(t "%Y-%m-%d %H:%M" magit-log-margin-width t 18))
   :custom
   (magit-refs-sections-hook '(magit-insert-error-header
                               magit-insert-branch-description
@@ -692,7 +694,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(neo-window-fixed-size nil)
  '(package-check-signature nil)
  '(package-selected-packages
-   '(org-ql helm-org-ql helm-org quelpa quelpa-use-package org-download lua-mode german-holidays lsp-ui zig-mode use-package lsp-java lsp-mode calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters projectile neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(helm-org-ql helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
