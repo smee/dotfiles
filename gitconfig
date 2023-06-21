@@ -35,6 +35,7 @@
 	  prompt = false
 [alias]
 	  wdiff = diff --word-diff=color --unified=1
+	authors = "!f() { git ls-tree -r -z --name-only HEAD -- $1 | xargs -0 -n1 git blame --line-porcelain HEAD |grep  \"^author \"|sort|uniq -c|sort -nr ; }; f"
 [merge]
 	conflictStyle = diff3
 [rerere]

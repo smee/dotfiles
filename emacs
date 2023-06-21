@@ -5,7 +5,7 @@
 (require 'package)
 
 ;;;;;;; package installation urls ;;;;;;;;;;;;;;;;;;;
-(setq package-archives '(("ELPA" . "https://tromey.com/elpa/") 
+(setq package-archives '(;("ELPA" . "https://tromey.com/elpa/") 
 			 ("gnu" . "https://elpa.gnu.org/packages/")
                          ("MELPA" . "https://melpa.org/packages/")
 			 ;("org" . "http://orgmode.org/elpa/")
@@ -38,12 +38,12 @@ Return a list of installed packages or nil for every skipped package."
 			  'smex
                           'hydra
 			  'cider 'clojure-mode
+                          'flycheck-clj-kondo
                           'company
                           'lsp-mode 'lsp-ui 'lsp-treemacs
 			  'rainbow-delimiters
 			  'paredit
 			  'clj-refactor
-			  'hl-sexp
 			  'ace-jump-mode
 			  'ace-window
 			  'expand-region
@@ -52,17 +52,17 @@ Return a list of installed packages or nil for every skipped package."
 			  'magit 'magit-todos
 			  'which-key
 			  'ido
-			  'ido-ubiquitous
-			  'org 'german-holidays
+			  'ido-completing-read+
+			  'german-holidays
 			  'rust-mode
 			  'js2-mode 'xref-js2
 			  'modus-themes
-                          'bm
+                          ;;'bm
                           'use-package
                           'quelpa 'quelpa-use-package
+                          'helm
                           'helm-org
-                          'org-ql ;; caution: org-ql MUST be installed after helm-org for org-super-links to work
-                          )
+                          'helm-org-rifle)
 
 (eval-when-compile
   (require 'use-package))
@@ -70,12 +70,12 @@ Return a list of installed packages or nil for every skipped package."
 (use-package quelpa
 :ensure t
 :config (setq quelpa-upgrade-interval 7);; upgrade all packages once a week according to https://github.com/quelpa/quelpa
-(add-hook #'after-init-hook #'quelpa-upgrade-all-maybe))
+)
 
 (use-package quelpa-use-package :ensure t)
-(use-package helm-org-ql
- :config
- (setq org-ql-search-directories-files-regexp "\.org\\(_archive\\)?$"))
+
+(use-package flycheck-clj-kondo
+  :ensure t)
 
 (use-package org-super-links
 :quelpa (org-super-links :repo "toshism/org-super-links" :fetcher github :commit "0.2")
@@ -125,14 +125,114 @@ Return a list of installed packages or nil for every skipped package."
 (use-package magit
   :ensure t
   :bind (("C-x g" . magit-status))
-  :init
-  (setq magit-log-margin '(t "%Y-%m-%d %H:%M" magit-log-margin-width t 18))
+  :config
+  ;; from https://tsdh.org/posts/2022-08-01-difftastic-diffing-with-magit.html
+  (defun th/magit--with-difftastic (buffer command)
+    "Run COMMAND with GIT_EXTERNAL_DIFF=difft then show result in BUFFER."
+    (let ((process-environment
+           (cons (concat "GIT_EXTERNAL_DIFF=difft --width="
+                         (number-to-string (frame-width)))
+                 process-environment)))
+      ;; Clear the result buffer (we might regenerate a diff, e.g., for
+      ;; the current changes in our working directory).
+      (with-current-buffer buffer
+        (setq buffer-read-only nil)
+        (erase-buffer))
+      ;; Now spawn a process calling the git COMMAND.
+      (make-process
+       :name (buffer-name buffer)
+       :buffer buffer
+       :command command
+       ;; Don't query for running processes when emacs is quit.
+       :noquery t
+       ;; Show the result buffer once the process has finished.
+       :sentinel (lambda (proc event)
+                   (when (eq (process-status proc) 'exit)
+                     (with-current-buffer (process-buffer proc)
+                       (goto-char (point-min))
+                       (ansi-color-apply-on-region (point-min) (point-max))
+                       (setq buffer-read-only t)
+                       (view-mode)
+                       (end-of-line)
+                       ;; difftastic diffs are usually 2-column side-by-side,
+                       ;; so ensure our window is wide enough.
+                       (let ((width (current-column)))
+                         (while (zerop (forward-line 1))
+                           (end-of-line)
+                           (setq width (max (current-column) width)))
+                         ;; Add column size of fringes
+                         (setq width (+ width
+                                        (fringe-columns 'left)
+                                        (fringe-columns 'right)))
+                         (goto-char (point-min))
+                         (pop-to-buffer
+                          (current-buffer)
+                          `(;; If the buffer is that wide that splitting the frame in
+                            ;; two side-by-side windows would result in less than
+                            ;; 80 columns left, ensure it's shown at the bottom.
+                            ,(when (> 80 (- (frame-width) width))
+                               #'display-buffer-at-bottom)
+                            (window-width
+                             . ,(min width (frame-width))))))))))))
+  (defun th/magit-show-with-difftastic (rev)
+  "Show the result of \"git show REV\" with GIT_EXTERNAL_DIFF=difft."
+  (interactive
+   (list (or
+          ;; If REV is given, just use it.
+          (when (boundp 'rev) rev)
+          ;; If not invoked with prefix arg, try to guess the REV from
+          ;; point's position.
+          (and (not current-prefix-arg)
+               (or (magit-thing-at-point 'git-revision t)
+                   (magit-branch-or-commit-at-point)))
+          ;; Otherwise, query the user.
+          (magit-read-branch-or-commit "Revision"))))
+  (if (not rev)
+      (error "No revision specified")
+    (th/magit--with-difftastic
+     (get-buffer-create (concat "*git show difftastic " rev "*"))
+     (list "git" "--no-pager" "show" "--ext-diff" rev))))
+  (defun th/magit-diff-with-difftastic (arg)
+  "Show the result of \"git diff ARG\" with GIT_EXTERNAL_DIFF=difft."
+  (interactive
+   (list (or
+          ;; If RANGE is given, just use it.
+          (when (boundp 'range) range)
+          ;; If prefix arg is given, query the user.
+          (and current-prefix-arg
+               (magit-diff-read-range-or-commit "Range"))
+          ;; Otherwise, auto-guess based on position of point, e.g., based on
+          ;; if we are in the Staged or Unstaged section.
+          (pcase (magit-diff--dwim)
+            ('unmerged (error "unmerged is not yet implemented"))
+            ('unstaged nil)
+            ('staged "--cached")
+            (`(stash . ,value) (error "stash is not yet implemented"))
+            (`(commit . ,value) (format "%s^..%s" value value))
+            ((and range (pred stringp)) range)
+            (_ (magit-diff-read-range-or-commit "Range/Commit"))))))
+  (let ((name (concat "*git diff difftastic"
+                      (if arg (concat " " arg) "")
+                      "*")))
+    (th/magit--with-difftastic
+     (get-buffer-create name)
+     `("git" "--no-pager" "diff" "--ext-diff" ,@(when arg (list arg))))))
+  (transient-define-prefix th/magit-aux-commands ()
+    "My personal auxiliary magit commands."
+    ["Auxiliary commands"
+     ("d" "Difftastic Diff (dwim)" th/magit-diff-with-difftastic)
+     ("s" "Difftastic Show" th/magit-show-with-difftastic)])
+  (transient-append-suffix 'magit-dispatch "!"
+  '("#" "My Magit Cmds" th/magit-aux-commands))
+  (define-key magit-status-mode-map (kbd "#") #'th/magit-aux-commands)
   :custom
   (magit-refs-sections-hook '(magit-insert-error-header
                               magit-insert-branch-description
                               magit-insert-local-branches
                               ;;magit-insert-remote-branches
-                              )))
+                              ))
+  (magit-log-margin '(t "%Y-%m-%d %H:%M" magit-log-margin-width t 18)))
+
 (use-package magit-todos
   :init
   (magit-todos-mode 1)
@@ -157,6 +257,9 @@ Return a list of installed packages or nil for every skipped package."
 
 (require 'ido-completing-read+)
 (ido-ubiquitous-mode 1)
+
+(use-package hl-sexp
+  :quelpa (hl-sexp :repo "ivanp7/hl-sexp" :fetcher github :commit "3b17a19c768079cc9fe8643bb1711137de4d6b02"))
 
 (use-package smex
   :init
@@ -195,12 +298,6 @@ Return a list of installed packages or nil for every skipped package."
   (aset buffer-display-table ?\^M []))
 
 ;;;; clojure specific configurations ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'clojure-mode)
-;; indent re-frame functions without so much leading white space
-(define-clojure-indent
-  (reg-sub '(1))
-  (reg-event-db '(1))
-  (reg-event-fx '(1)))
   
 ;; show fn as lambda in clojure files
 (defun esk-pretty-fn ()
@@ -217,6 +314,21 @@ Return a list of installed packages or nil for every skipped package."
   (paredit-mode 1)
   (hl-sexp-mode 1)
   (company-mode 1))
+
+(use-package clojure-mode
+  :ensure t  
+  :config
+  ;; indent re-frame functions without so much leading white space
+  (define-clojure-indent
+   (reg-sub '(1))
+   (reg-event-db '(1))
+   (reg-event-fx '(1)))
+  (require 'flycheck-clj-kondo)
+  (add-hook 'clojure-mode-hook #'my-clojure-configuration)
+  (add-hook 'cider-mode-hook #'my-clojure-configuration)
+  (add-hook 'cider-repl-mode-hook #'my-clojure-configuration))
+
+
 
 (use-package company
   :ensure t
@@ -247,10 +359,6 @@ Return a list of installed packages or nil for every skipped package."
 
 ;; clj-refactor and dependencies
 (require 'clj-refactor)
-
-(add-hook 'clojure-mode-hook #'my-clojure-configuration)
-(add-hook 'cider-mode-hook #'my-clojure-configuration)
-(add-hook 'cider-repl-mode-hook #'my-clojure-configuration)
 (setq nrepl-log-messages t)
 
 (global-set-key [f8] 'other-frame)
@@ -599,7 +707,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
    ("d" org-clock-display)
    ("r" org-clock-report)
    ("t" org-time-stamp)
-   ("q" helm-org-ql)
+   ("q" helm-org-rifle)
    ("?" (org-info "Clocking commands")))
 (global-set-key (kbd "C-c o") 'hydra-org-clock/body)
 
@@ -608,28 +716,33 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
 (global-set-key (kbd "S-<f6>") (lambda () (interactive) (insert "^")))
 
 ;; bookmarks, https://github.com/joodland/bm
-(require 'bm)
-(global-set-key (kbd "<C-f2>") 'bm-toggle)
-(global-set-key (kbd "<f2>")   'bm-next)
-(global-set-key (kbd "<S-f2>") 'bm-previous)
-(global-set-key (kbd "<left-fringe> <mouse-5>") 'bm-next-mouse)
-(global-set-key (kbd "<left-fringe> <mouse-4>") 'bm-previous-mouse)
-(global-set-key (kbd "<left-fringe> <mouse-1>") 'bm-toggle-mouse)
-(setq bm-restore-repository-on-load t) ;; restore on load (even before you require bm)
-(setq bm-cycle-all-buffers t) ;; Allow cross-buffer 'next'
-(setq bm-repository-file "~/.emacs.d/bm-repository") ;; where to store persistant files
-(setq-default bm-buffer-persistence t)  ;; save bookmarks
-(add-hook 'kill-buffer-hook #'bm-buffer-save)
-(setq bm-marker 'bm-marker-left)
-;; Saving the repository to file when on exit.
-;; kill-buffer-hook is not called when Emacs is killed, so we
-;; must save all bookmarks first.
-(add-hook 'kill-emacs-hook #'(lambda nil
-                               (bm-buffer-save-all)
-                               (bm-repository-save)))
-;; Restoring bookmarks
-(add-hook 'find-file-hooks   #'bm-buffer-restore)
-(add-hook 'after-revert-hook #'bm-buffer-restore)
+(use-package bm
+  :quelpa (bm :repo "joodland/bm" :fetcher github :commit "9a31c61f44e6f1033ca43bd7f3eb33ffdb2ca595")
+  :ensure t
+  :demand t
+  :bind (("<C-f2>" . bm-toggle)
+	 ("<f2>" . bm-next)
+	 ("<S-f2>" . bm-previous)
+	 ("<left-fringe> <mouse-5>" . bm-next-mouse)
+	 ("<left-fringe> <mouse-8>" . bm-previous-mouse)
+	 ("<left-fringe> <mouse-9>" . bm-toggle-mouse))
+  :init
+  (setq bm-restore-repository-on-load t)
+  :config
+  (setq bm-cycle-all-buffers t) ;; Allow cross-buffer 'next'
+  (setq bm-repository-file "~/.emacs.d/bm-repository") ;; where to store persistant files
+  (setq-default bm-buffer-persistence t)  ;; save bookmarks
+  (add-hook 'kill-buffer-hook #'bm-buffer-save)
+  (setq bm-marker 'bm-marker-left)
+  ;; Saving the repository to file when on exit.
+  ;; kill-buffer-hook is not called when Emacs is killed, so we
+  ;; must save all bookmarks first.
+  (add-hook 'kill-emacs-hook #'(lambda nil
+				 (bm-buffer-save-all)
+				 (bm-repository-save)))
+  ;; Restoring bookmarks
+  (add-hook 'find-file-hooks   #'bm-buffer-restore)
+  (add-hook 'after-revert-hook #'bm-buffer-restore))
 
 
 ;; use Windows browser to open links in WSL
@@ -678,10 +791,86 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(cider-inspector-fill-frame nil)
  '(cider-lein-parameters "trampoline repl :headless")
  '(column-number-mode t)
- '(company-idle-delay 2)
+ '(company-idle-delay 2 t)
+ '(connection-local-criteria-alist
+   '(((:application tramp)
+      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
+ '(connection-local-profile-alist
+   '((tramp-connection-local-darwin-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . tramp-ps-time)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-busybox-ps-profile
+      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (user . string)
+       (group . string)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (ttname . string)
+       (time . tramp-ps-time)
+       (nice . number)
+       (etime . tramp-ps-time)
+       (args)))
+     (tramp-connection-local-bsd-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (group . string)
+       (comm . 52)
+       (state . string)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . number)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-default-shell-profile
+      (shell-file-name . "/bin/sh")
+      (shell-command-switch . "-c"))
+     (tramp-connection-local-default-system-profile
+      (path-separator . ":")
+      (null-device . "/dev/null"))))
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+   '("f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
@@ -690,14 +879,20 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
+ '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
  '(package-check-signature nil)
  '(package-selected-packages
-   '(helm-org-ql helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(helm-org-rifle magit-section with-editor helm-core popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+ '(quelpa-update-melpa-p nil)
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
  '(reb-re-syntax 'string)
+ '(safe-local-variable-values
+   '((buffer-file-coding-system . utf-8-unix)
+     (org-export-html-style-include-scripts)
+     (org-export-html-style-include-default)))
  '(show-paren-mode t)
  '(sp-base-key-bindings 'sp)
  '(speedbar-supported-extension-expressions
