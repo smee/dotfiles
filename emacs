@@ -530,6 +530,7 @@ Return a list of installed packages or nil for every skipped package."
     ;; show clock table durations in work days (Arbeitstage)
     (setq org-duration-format '((" AT") (special . h:mm))))
 
+
 (use-package holidays
   :init (require 'german-holidays)
   :config
@@ -688,27 +689,48 @@ nothing happens."
   ("3" (insert "³") "³"))
 (global-set-key (kbd "C-;") 'hydra-umlauts/body)
 
+(defun my-org-screenshot ()
+  "Take a screenshot into a time stamped unique-named file and insert a link to this file."
+  (interactive)
+  ;; At the very first, check if the current buffer has a file name. If not, mode needs to be
+  ;; PROMPT with DEFAULT_FOLDER
+  (if (null (buffer-file-name)) (setq PROMPT t))
+  (setq DEFAULT_FOLDER "c:/Dropbox/home/sdienst/org/img")
+  (setq DEFAULT_FOLDER_WSL "/home/sdienst/org/img")
+  (setq filename (format-time-string "%Y%m%d_%H%M%S.png"))
+  (shell-command "/mnt/c/Windows/System32/snippingtool.exe /clip")
+  (shell-command
+   ;; This feeds the command to the Windows Snipping Tool, via powershell
+   (concat "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -command 'Add-Type -AssemblyName System.Windows.Forms;if ($([System.Windows.Forms.Clipboard]::ContainsImage())) {$image = [System.Windows.Forms.Clipboard]::GetImage();[System.Drawing.Bitmap]$image.Save(\"" (concat DEFAULT_FOLDER "/" filename) "\",[System.Drawing.Imaging.ImageFormat]::Png); Write-Output ''clipboard content saved as file''} else {Write-Output ''clipboard does not contain image data''}'"))
+  (if (file-exists-p (concat DEFAULT_FOLDER_WSL "/" filename))
+      ;; Checks if the screenshot was created
+      (insert
+       ;; Inserts the result in the current ORG buffer
+       (concat "[[file:" (concat DEFAULT_FOLDER_WSL "/" filename) "][" filename "]]"))
+      (message "No screenshot was created, aborting.")))
+
 
 (defhydra hydra-org-clock (:color blue :hint nil)
-   "
+  "
 Clock   In/out^     ^Edit^   ^Summary     (_?_)
 -----------------------------------------
         _i_n         _e_dit       _j_ump to current entry
         _c_ontinue   _q_uit       _d_isplay
         _o_ut        _t_imestamp  _r_eport
-        _q_uery
+        _q_uery      _s_creenshot
       "
-   ("i" org-clock-in)
-   ("o" org-clock-out)
-   ("c" org-clock-in-last)
-   ("e" org-clock-modify-effort-estimate)
-   ("q" org-clock-cancel)
-   ("j" org-clock-goto)
-   ("d" org-clock-display)
-   ("r" org-clock-report)
-   ("t" org-time-stamp)
-   ("q" helm-org-rifle)
-   ("?" (org-info "Clocking commands")))
+  ("i" org-clock-in)
+  ("o" org-clock-out)
+  ("c" org-clock-in-last)
+  ("e" org-clock-modify-effort-estimate)
+  ("q" org-clock-cancel)
+  ("j" org-clock-goto)
+  ("d" org-clock-display)
+  ("r" org-clock-report)
+  ("s" my-org-screenshot)
+  ("t" org-time-stamp)
+  ("q" helm-org-rifle)
+  ("?" (org-info "Clocking commands")))
 (global-set-key (kbd "C-c o") 'hydra-org-clock/body)
 
 (global-set-key (kbd "M-S-<f6>") 'delete-indentation) ;; use M-S <f6> instead of M-S 6 (broken key on keyboard...)
