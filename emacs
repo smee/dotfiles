@@ -699,6 +699,7 @@ nothing happens."
   (setq DEFAULT_FOLDER "c:/Dropbox/home/sdienst/org/img")
   (setq DEFAULT_FOLDER_WSL "/home/sdienst/org/img")
   (setq filename (format-time-string "%Y%m%d_%H%M%S.png"))
+  (suspend-frame)
   (shell-command "/mnt/c/Windows/System32/snippingtool.exe /clip")
   (shell-command
    ;; This feeds the command to the Windows Snipping Tool, via powershell
