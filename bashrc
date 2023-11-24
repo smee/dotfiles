@@ -35,7 +35,12 @@ alias gitlogsmall='git log --graph --abbrev-commit --pretty=oneline --decorate'
 alias l='lein'
 alias leni='lein'
 # top-like interface for running docker containers, see https://github.com/bcicen/ctop
-alias ctop="docker run -ti --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/vektorlab/ctop:latest -scale-cpu -a"
+alias ctop="docker run -ti --rm --name ctop-$(date +%Y-%m-%d-%H-%M-%S) -v /var/run/docker.sock:/var/run/docker.sock quay.io/vektorlab/ctop:latest -a"
+pg() { ;; htop-style monitor for running queries in postgres databases running as dokku plugin
+docker run -it --rm -e PGPASSWORD=`sudo cat /var/lib/dokku/services/postgres/$1/PASSWORD` -e PGUSER=postgres -e PGHOST=`docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dokku.postgres.$1` rsmnarts/pg_activity --dbname=`cat /var/lib/dokku/services/postgres/$1/DATABASE_NAME`
+}
+
+
 # create a distinct color from the hostname of the current system
 if [[ $TERM =~ "256color" ]]; then
    host_color="38;5;$((16 + $(hostname | cksum | cut -c1-3) % 256))";
