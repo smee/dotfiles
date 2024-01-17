@@ -131,8 +131,8 @@ if [ -f "${SSH_ENV}" ]; then
 else
   start_agent;
 fi
-
-export DISPLAY=:0.0
+# do not overwrite DISPLAY if it already exists (e.g. forwarding X11 via ssh)
+export DISPLAY=${DISPLAY:-"localhost:0.0"}
 export TERM=xterm-256color
 # -rw-r--r--
 # umask 0133
