@@ -356,6 +356,10 @@ Return a list of installed packages or nil for every skipped package."
   ;; looong history
   (setq cider-repl-history-size 3000)
   (setq cider-eldoc-display-for-symbol-at-point nil) ;; disable cider documentation popups, use lsp-ui instead
+  (setq cider-eval-spinner-type 'vertical-breathing)
+  (setq cider-inspector-fill-frame nil)
+  (setq cider-lein-parameters "trampoline repl :headless")
+  (setq cider-inspector-max-coll-size 1)
   )
 
 ;; clj-refactor and dependencies
@@ -457,7 +461,7 @@ Return a list of installed packages or nil for every skipped package."
   :bind
   ("C-c a" . org-agenda)
   :config
-  (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org" "~/org/notes-urz.org"))
+  (setq org-agenda-files '("~/org/notes.org" "~/org/tagebuch.org"))
   (setq org-agenda-clockreport-parameter-plist '(:link t :maxlevel 5))
   ;; custom agendas for mobileorg
   (setq org-agenda-custom-commands
@@ -524,12 +528,13 @@ Return a list of installed packages or nil for every skipped package."
     (setq org-duration-units ;; each unit is in minutes
       '(("min" . 1)
         ("h" . 60)
-        (" AT" . 480)
+        ;;(" AT" . 480)
         ("d" . 1440)
         ("m" . 43200)
         ("y" . 525960.0)))
     ;; show clock table durations in work days (Arbeitstage)
-    (setq org-duration-format '((" AT") (special . h:mm))))
+    ;;(setq org-duration-format '((" AT") (special . h:mm)))
+    )
 
 
 (use-package holidays
@@ -815,12 +820,16 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(cider-inspector-fill-frame nil)
  '(cider-lein-parameters "trampoline repl :headless")
  '(column-number-mode t)
- '(company-idle-delay 2 t)
+ '(company-idle-delay 2)
  '(connection-local-criteria-alist
-   '(((:application tramp)
+   '(((:application eshell)
+      eshell-connection-default-profile)
+     ((:application tramp)
       tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
  '(connection-local-profile-alist
-   '((tramp-connection-local-darwin-ps-profile
+   '((eshell-connection-default-profile
+      (eshell-path-env-list))
+     (tramp-connection-local-darwin-ps-profile
       (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
       (tramp-process-attributes-ps-format
        (pid . number)
@@ -894,7 +903,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
       (null-device . "/dev/null"))))
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4" "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492" "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7" "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+   '("fbf73690320aa26f8daffdd1210ef234ed1b0c59f3d001f342b9c0bbf49f531c" "9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2" "95167736741bef2ad3e0543ed545dada5b95fef309883253387a2b14ab67db8d" "b29ba9bfdb34d71ecf3322951425a73d825fb2c002434282d2e0e8c44fce8185" "b5c3c59e2fff6877030996eadaa085a5645cc7597f8876e982eadc923f597aca" "f5661fd54b1e60a4ae373850447efc4158c23b1c7c9d65aa1295a606278da0f8" "fc608d4c9f476ad1da7f07f7d19cc392ec0fb61f77f7236f2b6b42ae95801a62" "21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4" "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492" "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7" "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
@@ -906,9 +915,36 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
+ '(org-preview-latex-process-alist
+   '((dvipng :programs
+             ("latex" "dvipng")
+             :description "dvi > png" :message "you need to install the programs: latex and dvipng." :image-input-type "dvi" :image-output-type "png" :image-size-adjust
+             (1.0 . 1.0)
+             :latex-compiler
+             ("latex -interaction nonstopmode -output-directory %o %F")
+             :image-converter
+             ("dvipng -D %D -T tight -o %O %F")
+             :transparent-image-converter
+             ("dvipng -D %D -T tight -bg Transparent -o %O %F"))
+     (dvisvgm :programs
+              ("latex" "dvisvgm")
+              :description "dvi > svg" :message "you need to install the programs: latex and dvisvgm." :image-input-type "dvi" :image-output-type "svg" :image-size-adjust
+              (1.7 . 1.5)
+              :latex-compiler
+              ("latex -interaction nonstopmode -output-directory %o %f")
+              :image-converter
+              ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
+     (imagemagick :programs
+                  ("latex" "convert")
+                  :description "pdf > png" :message "you need to install the programs: latex and imagemagick." :image-input-type "pdf" :image-output-type "png" :image-size-adjust
+                  (1.0 . 1.0)
+                  :latex-compiler
+                  ("pdflatex -interaction nonstopmode -output-directory %o %f")
+                  :image-converter
+                  ("convert -density %D -trim -antialias %F -quality 100 %O"))))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(with-editor helm-org-rifle magit-section popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(modus-themes projectile lsp-treemacs lsp-ui lsp-mode org-sidebar vundo with-editor helm-org-rifle magit-section popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(quelpa-update-melpa-p nil)
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
