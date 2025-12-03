@@ -104,7 +104,7 @@ CDPATH='.'
 source ~/dotfiles/scripts/z.sh
 export PATH=~/bin:~/dotfiles/scripts:~/.cargo/bin:$PATH
 # ignore ls, bg, fg, exit and all commands that start with a space
-export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:j:z *"
+export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:z *"
 export HISTFILESIZE=10000000
 export HISTSIZE=10000000
 

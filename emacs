@@ -68,21 +68,49 @@ Return a list of installed packages or nil for every skipped package."
   (require 'use-package))
 
 (use-package quelpa
-:ensure t
-:config (setq quelpa-upgrade-interval 7);; upgrade all packages once a week according to https://github.com/quelpa/quelpa
-)
+  :ensure t
+  :config (setq quelpa-upgrade-interval 7) ;; upgrade all packages once a week according to https://github.com/quelpa/quelpa
+  )
 
 (use-package quelpa-use-package :ensure t)
+
+;;;;;;;;;;;; handle copy/paste to/from windows clipboard in WSL2 ;;;;;;;;;;;;;
+(defun shell-command-on-str (cmd &optional str)
+  "Insert result of calling CMD with STR as input.
+
+STR is current-kill if unspecified.
+"
+  (interactive (list (read-shell-command "Shell command on region: ")))
+  (setq str (or str
+                (current-kill 0)))
+  (insert (with-temp-buffer
+            (insert str)
+            (shell-command-on-region (point-min) (point-max) cmd nil 'replace)
+            (buffer-string))))
+
+(defun wsl-update-clip (&rest _args)
+  "Put into windows clipboard."
+  (interactive)
+  (shell-command-on-str "clip.exe"))
+
+;;always put top of kill ring into windows clipboard
+;;(advice-add 'kill-new :after #'wsl-update-clip)
+
+;; paste from windows clipboard via windows hotkey "Ctrl-V"
+(global-set-key (kbd "C-v")
+                (lambda ()
+                  (interactive) (shell-command-on-str "powershell.exe -noprofile -command Get-Clipboard")))
 
 (use-package flycheck-clj-kondo
   :ensure t)
 
+
 (use-package org-super-links
-:quelpa (org-super-links :repo "toshism/org-super-links" :fetcher github :branch "develop")
-:bind (("C-c s s" . org-super-links-link)
-       ("C-c s d" . org-super-links-delete-link)
-       ("C-c s l" . org-super-links-store-link)
-       ("C-c s C-l" . org-super-links-insert-link)))
+  :quelpa (org-super-links :repo "toshism/org-super-links" :fetcher github :branch "develop")
+  :bind (("C-c s s" . org-super-links-link)
+         ("C-c s d" . org-super-links-delete-link)
+         ("C-c s l" . org-super-links-store-link)
+         ("C-c s C-l" . org-super-links-insert-link)))
 
 (use-package lsp-mode
   :commands lsp
@@ -443,7 +471,7 @@ Return a list of installed packages or nil for every skipped package."
 
 (use-package org-capture
   :after org
-  :bind (("\C-cc" . org-capture))
+  :bind (("\C-c c" . org-capture))
   :config
   (setq org-capture-templates
         '(("t" "Todo" entry (file+headline "notes.org" "Tasks")
@@ -689,6 +717,8 @@ nothing happens."
   (":" (insert "Ö") "Ö")
   ("[" (insert "ü") "ü")
   ("{" (insert "Ü") "Ü")
+  ;("'" (insert "ü") "ü")
+  ;("\"" (insert "Ü") "Ü")
   ("-" (insert "ß") "ß")
   ("E" (insert "€") "€")
   ("2" (insert "²") "²")
@@ -705,7 +735,7 @@ nothing happens."
   (setq DEFAULT_FOLDER_WSL "/home/sdienst/org/img")
   (setq filename (format-time-string "%Y%m%d_%H%M%S.png"))
   (suspend-frame)
-  (shell-command "/mnt/c/Windows/System32/snippingtool.exe /clip")
+  (shell-command "/mnt/c/Users/Steffen\\ Dienst/AppData/Local/Microsoft/WindowsApps/SnippingTool.exe /clip")
   (shell-command
    ;; This feeds the command to the Windows Snipping Tool, via powershell
    (concat "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -command 'Add-Type -AssemblyName System.Windows.Forms;if ($([System.Windows.Forms.Clipboard]::ContainsImage())) {$image = [System.Windows.Forms.Clipboard]::GetImage();[System.Drawing.Bitmap]$image.Save(\"" (concat DEFAULT_FOLDER "/" filename) "\",[System.Drawing.Imaging.ImageFormat]::Png); Write-Output ''clipboard content saved as file''} else {Write-Output ''clipboard does not contain image data''}'"))
@@ -820,7 +850,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(cider-inspector-fill-frame nil)
  '(cider-lein-parameters "trampoline repl :headless")
  '(column-number-mode t)
- '(company-idle-delay 2)
+ '(company-idle-delay 2 t)
  '(connection-local-criteria-alist
    '(((:application eshell)
       eshell-connection-default-profile)
@@ -903,7 +933,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
       (null-device . "/dev/null"))))
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("fbf73690320aa26f8daffdd1210ef234ed1b0c59f3d001f342b9c0bbf49f531c" "9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2" "95167736741bef2ad3e0543ed545dada5b95fef309883253387a2b14ab67db8d" "b29ba9bfdb34d71ecf3322951425a73d825fb2c002434282d2e0e8c44fce8185" "b5c3c59e2fff6877030996eadaa085a5645cc7597f8876e982eadc923f597aca" "f5661fd54b1e60a4ae373850447efc4158c23b1c7c9d65aa1295a606278da0f8" "fc608d4c9f476ad1da7f07f7d19cc392ec0fb61f77f7236f2b6b42ae95801a62" "21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4" "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492" "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7" "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+   '("5e39e95c703e17a743fb05a132d727aa1d69d9d2c9cde9353f5350e545c793d4" "fbf73690320aa26f8daffdd1210ef234ed1b0c59f3d001f342b9c0bbf49f531c" "9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2" "95167736741bef2ad3e0543ed545dada5b95fef309883253387a2b14ab67db8d" "b29ba9bfdb34d71ecf3322951425a73d825fb2c002434282d2e0e8c44fce8185" "b5c3c59e2fff6877030996eadaa085a5645cc7597f8876e982eadc923f597aca" "f5661fd54b1e60a4ae373850447efc4158c23b1c7c9d65aa1295a606278da0f8" "fc608d4c9f476ad1da7f07f7d19cc392ec0fb61f77f7236f2b6b42ae95801a62" "21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4" "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492" "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7" "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
@@ -944,7 +974,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
                   ("convert -density %D -trim -antialias %F -quality 100 %O"))))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(modus-themes projectile lsp-treemacs lsp-ui lsp-mode org-sidebar vundo with-editor helm-org-rifle magit-section popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(js2-refactor baser modus-themes projectile lsp-treemacs lsp-ui lsp-mode org-sidebar vundo with-editor helm-org-rifle magit-section popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
  '(quelpa-update-melpa-p nil)
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
