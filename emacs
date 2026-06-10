@@ -155,105 +155,6 @@ STR is current-kill if unspecified.
   :ensure t
   :bind (("C-x g" . magit-status))
   :config
-  ;; from https://tsdh.org/posts/2022-08-01-difftastic-diffing-with-magit.html
-  (defun th/magit--with-difftastic (buffer command)
-    "Run COMMAND with GIT_EXTERNAL_DIFF=difft then show result in BUFFER."
-    (let ((process-environment
-           (cons (concat "GIT_EXTERNAL_DIFF=difft --width="
-                         (number-to-string (frame-width)))
-                 process-environment)))
-      ;; Clear the result buffer (we might regenerate a diff, e.g., for
-      ;; the current changes in our working directory).
-      (with-current-buffer buffer
-        (setq buffer-read-only nil)
-        (erase-buffer))
-      ;; Now spawn a process calling the git COMMAND.
-      (make-process
-       :name (buffer-name buffer)
-       :buffer buffer
-       :command command
-       ;; Don't query for running processes when emacs is quit.
-       :noquery t
-       ;; Show the result buffer once the process has finished.
-       :sentinel (lambda (proc event)
-                   (when (eq (process-status proc) 'exit)
-                     (with-current-buffer (process-buffer proc)
-                       (goto-char (point-min))
-                       (ansi-color-apply-on-region (point-min) (point-max))
-                       (setq buffer-read-only t)
-                       (view-mode)
-                       (end-of-line)
-                       ;; difftastic diffs are usually 2-column side-by-side,
-                       ;; so ensure our window is wide enough.
-                       (let ((width (current-column)))
-                         (while (zerop (forward-line 1))
-                           (end-of-line)
-                           (setq width (max (current-column) width)))
-                         ;; Add column size of fringes
-                         (setq width (+ width
-                                        (fringe-columns 'left)
-                                        (fringe-columns 'right)))
-                         (goto-char (point-min))
-                         (pop-to-buffer
-                          (current-buffer)
-                          `(;; If the buffer is that wide that splitting the frame in
-                            ;; two side-by-side windows would result in less than
-                            ;; 80 columns left, ensure it's shown at the bottom.
-                            ,(when (> 80 (- (frame-width) width))
-                               #'display-buffer-at-bottom)
-                            (window-width
-                             . ,(min width (frame-width))))))))))))
-  (defun th/magit-show-with-difftastic (rev)
-  "Show the result of \"git show REV\" with GIT_EXTERNAL_DIFF=difft."
-  (interactive
-   (list (or
-          ;; If REV is given, just use it.
-          (when (boundp 'rev) rev)
-          ;; If not invoked with prefix arg, try to guess the REV from
-          ;; point's position.
-          (and (not current-prefix-arg)
-               (or (magit-thing-at-point 'git-revision t)
-                   (magit-branch-or-commit-at-point)))
-          ;; Otherwise, query the user.
-          (magit-read-branch-or-commit "Revision"))))
-  (if (not rev)
-      (error "No revision specified")
-    (th/magit--with-difftastic
-     (get-buffer-create (concat "*git show difftastic " rev "*"))
-     (list "git" "--no-pager" "show" "--ext-diff" rev))))
-  (defun th/magit-diff-with-difftastic (arg)
-  "Show the result of \"git diff ARG\" with GIT_EXTERNAL_DIFF=difft."
-  (interactive
-   (list (or
-          ;; If RANGE is given, just use it.
-          (when (boundp 'range) range)
-          ;; If prefix arg is given, query the user.
-          (and current-prefix-arg
-               (magit-diff-read-range-or-commit "Range"))
-          ;; Otherwise, auto-guess based on position of point, e.g., based on
-          ;; if we are in the Staged or Unstaged section.
-          (pcase (magit-diff--dwim)
-            ('unmerged (error "unmerged is not yet implemented"))
-            ('unstaged nil)
-            ('staged "--cached")
-            (`(stash . ,value) (error "stash is not yet implemented"))
-            (`(commit . ,value) (format "%s^..%s" value value))
-            ((and range (pred stringp)) range)
-            (_ (magit-diff-read-range-or-commit "Range/Commit"))))))
-  (let ((name (concat "*git diff difftastic"
-                      (if arg (concat " " arg) "")
-                      "*")))
-    (th/magit--with-difftastic
-     (get-buffer-create name)
-     `("git" "--no-pager" "diff" "--ext-diff" ,@(when arg (list arg))))))
-  (transient-define-prefix th/magit-aux-commands ()
-    "My personal auxiliary magit commands."
-    ["Auxiliary commands"
-     ("d" "Difftastic Diff (dwim)" th/magit-diff-with-difftastic)
-     ("s" "Difftastic Show" th/magit-show-with-difftastic)])
-  (transient-append-suffix 'magit-dispatch "!"
-  '("#" "My Magit Cmds" th/magit-aux-commands))
-  (define-key magit-status-mode-map (kbd "#") #'th/magit-aux-commands)
   :custom
   (magit-refs-sections-hook '(magit-insert-error-header
                               magit-insert-branch-description
@@ -261,6 +162,12 @@ STR is current-kill if unspecified.
                               ;;magit-insert-remote-branches
                               ))
   (magit-log-margin '(t "%Y-%m-%d %H:%M" magit-log-margin-width t 18)))
+
+(use-package magit-difftastic
+  :after magit
+  :ensure t
+  :quelpa (magit-difftastic :repo "rschmukler/magit-difftastic" :fetcher github :commit "1e2a1f60288341893a9d21d8a900739be9f34e40")
+  :init (magit-difftastic-mode +1))
 
 (use-package magit-todos
   :init
@@ -639,7 +546,7 @@ STR is current-kill if unspecified.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Rec Mono Semicasual" :foundry "ARRW" :slant normal :weight regular :height 113 :width normal)))))
+ )
 ;; expand-region for expanding/contracting selections according to nested semantic entities
 (global-set-key (kbd "M-2") 'er/expand-region)
 (global-set-key (kbd "M-3") 'er/contract-region)
@@ -835,111 +742,151 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(TeX-source-correlate-mode t)
  '(TeX-source-correlate-start-server t)
  '(TeX-view-program-list
-   '(("Okular"
-      ("okular --unique %o#src:%n%b")
-      "/usr/bin/okular")))
+   '(("Okular" ("okular --unique %o#src:%n%b") "/usr/bin/okular")))
  '(TeX-view-program-selection
-   '(((output-dvi has-no-display-manager)
-      "dvi2tty")
-     ((output-dvi style-pstricks)
-      "dvips and gv")
-     (output-dvi "xdvi")
-     (output-pdf "Okular")
-     (output-html "xdg-open")))
+   '(((output-dvi has-no-display-manager) "dvi2tty")
+     ((output-dvi style-pstricks) "dvips and gv") (output-dvi "xdvi")
+     (output-pdf "Okular") (output-html "xdg-open")))
  '(blink-cursor-mode nil)
- '(cider-eval-spinner-type 'vertical-breathing)
  '(cider-inspector-fill-frame nil)
  '(cider-lein-parameters "trampoline repl :headless")
+ '(cider-spinner-type 'vertical-breathing)
  '(column-number-mode t)
  '(company-idle-delay 2)
  '(connection-local-criteria-alist
-   '(((:application eshell)
-      eshell-connection-default-profile)
+   '(((:application eshell) eshell-connection-default-profile)
      ((:application tramp)
-      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
+      tramp-connection-local-default-system-profile
+      tramp-connection-local-default-shell-profile)))
  '(connection-local-profile-alist
-   '((eshell-connection-default-profile
-      (eshell-path-env-list))
+   '((eshell-connection-default-profile (eshell-path-env-list))
      (tramp-connection-local-darwin-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . tramp-ps-time)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
+      (tramp-process-attributes-ps-args "-acxww" "-o"
+                                        "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                        "-o" "state=abcde" "-o"
+                                        "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format (pid . number)
+                                          (euid . number)
+                                          (user . string)
+                                          (egid . number) (comm . 52)
+                                          (state . 5) (ppid . number)
+                                          (pgrp . number)
+                                          (sess . number)
+                                          (ttname . string)
+                                          (tpgid . number)
+                                          (minflt . number)
+                                          (majflt . number)
+                                          (time . tramp-ps-time)
+                                          (pri . number)
+                                          (nice . number)
+                                          (vsize . number)
+                                          (rss . number)
+                                          (etime . tramp-ps-time)
+                                          (pcpu . number)
+                                          (pmem . number) (args)))
      (tramp-connection-local-busybox-ps-profile
-      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (user . string)
-       (group . string)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (ttname . string)
-       (time . tramp-ps-time)
-       (nice . number)
-       (etime . tramp-ps-time)
-       (args)))
+      (tramp-process-attributes-ps-args "-o"
+                                        "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                        "-o" "stat=abcde" "-o"
+                                        "ppid,pgid,tty,time,nice,etime,args")
+      (tramp-process-attributes-ps-format (pid . number)
+                                          (user . string)
+                                          (group . string) (comm . 52)
+                                          (state . 5) (ppid . number)
+                                          (pgrp . number)
+                                          (ttname . string)
+                                          (time . tramp-ps-time)
+                                          (nice . number)
+                                          (etime . tramp-ps-time)
+                                          (args)))
      (tramp-connection-local-bsd-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (group . string)
-       (comm . 52)
-       (state . string)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . number)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
+      (tramp-process-attributes-ps-args "-acxww" "-o"
+                                        "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                        "-o"
+                                        "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format (pid . number)
+                                          (euid . number)
+                                          (user . string)
+                                          (egid . number)
+                                          (group . string) (comm . 52)
+                                          (state . string)
+                                          (ppid . number)
+                                          (pgrp . number)
+                                          (sess . number)
+                                          (ttname . string)
+                                          (tpgid . number)
+                                          (minflt . number)
+                                          (majflt . number)
+                                          (time . tramp-ps-time)
+                                          (pri . number)
+                                          (nice . number)
+                                          (vsize . number)
+                                          (rss . number)
+                                          (etime . number)
+                                          (pcpu . number)
+                                          (pmem . number) (args)))
      (tramp-connection-local-default-shell-profile
-      (shell-file-name . "/bin/sh")
-      (shell-command-switch . "-c"))
+      (shell-file-name . "/bin/sh") (shell-command-switch . "-c"))
      (tramp-connection-local-default-system-profile
-      (path-separator . ":")
-      (null-device . "/dev/null"))))
+      (path-separator . ":") (null-device . "/dev/null"))))
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("488b82a8d9ace0aea8a6825db144e3c65c4f1ef3e090b618bf311d9cdb513322" "7e98dc1aa7f5db0557691da690c38d55e83ddd33c6d268205d66e430d57fb982" "5e39e95c703e17a743fb05a132d727aa1d69d9d2c9cde9353f5350e545c793d4" "fbf73690320aa26f8daffdd1210ef234ed1b0c59f3d001f342b9c0bbf49f531c" "9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2" "95167736741bef2ad3e0543ed545dada5b95fef309883253387a2b14ab67db8d" "b29ba9bfdb34d71ecf3322951425a73d825fb2c002434282d2e0e8c44fce8185" "b5c3c59e2fff6877030996eadaa085a5645cc7597f8876e982eadc923f597aca" "f5661fd54b1e60a4ae373850447efc4158c23b1c7c9d65aa1295a606278da0f8" "fc608d4c9f476ad1da7f07f7d19cc392ec0fb61f77f7236f2b6b42ae95801a62" "21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4" "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492" "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7" "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1" "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5" "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899" "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e" "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47" "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d" "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625" "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71" "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d" "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a" "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079" "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb" "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470" "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a" "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476" "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714" "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b" "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27" "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617" "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd" "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338" "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab" "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc" "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a" "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7" "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065" "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19" default))
+   '("8fbf2d585f1138caaafa9e523fa3a20614c1d1dcc6002c9808c3e40028e21df4"
+     "c8b84cff70a0e7a26e1a67a58a5066ff3b28bb2fd0ded47e71cc94da52ddd03a"
+     "488b82a8d9ace0aea8a6825db144e3c65c4f1ef3e090b618bf311d9cdb513322"
+     "7e98dc1aa7f5db0557691da690c38d55e83ddd33c6d268205d66e430d57fb982"
+     "5e39e95c703e17a743fb05a132d727aa1d69d9d2c9cde9353f5350e545c793d4"
+     "fbf73690320aa26f8daffdd1210ef234ed1b0c59f3d001f342b9c0bbf49f531c"
+     "9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2"
+     "95167736741bef2ad3e0543ed545dada5b95fef309883253387a2b14ab67db8d"
+     "b29ba9bfdb34d71ecf3322951425a73d825fb2c002434282d2e0e8c44fce8185"
+     "b5c3c59e2fff6877030996eadaa085a5645cc7597f8876e982eadc923f597aca"
+     "f5661fd54b1e60a4ae373850447efc4158c23b1c7c9d65aa1295a606278da0f8"
+     "fc608d4c9f476ad1da7f07f7d19cc392ec0fb61f77f7236f2b6b42ae95801a62"
+     "21e3d55141186651571241c2ba3c665979d1e886f53b2e52411e9e96659132d4"
+     "3e2039156049bd0661317137a3761d4c2ff43e8a2aa423f6db0c0e8df0197492"
+     "4320a92406c5015e8cba1e581a88f058765f7400cf5d885a3aa9b7b9fc448fa7"
+     "f4157511d5d4a31766a01ce6aeef7329a39afbfa61f6f6a96a29bb97dc9e00b1"
+     "7887cf8b470098657395502e16809523b629249060d61607c2225d2ef2ad59f5"
+     "e46fd158e0a01987e24e266a9dfb2d5a5202656aa1028d53ea814621a53c7899"
+     "e2337309361eef29e91656c5e511a6cb8c54ce26231e11424a8873ea88d9093e"
+     "11873c4fbf465b956889adfa9182495db3bf214d9a70c0f858f07f6cc91cbd47"
+     "bfc0b9c3de0382e452a878a1fb4726e1302bf9da20e69d6ec1cd1d5d82f61e3d"
+     "53585ce64a33d02c31284cd7c2a624f379d232b27c4c56c6d822eff5d3ba7625"
+     "7dc296b80df1b29bfc4062d1a66ee91efb462d6a7a934955e94e786394d80b71"
+     "21388667ce5ee0b375e6282f0d6c6b61588da6604d343bbb19389e6a54d3d00d"
+     "7b3ce93a17ce4fc6389bba8ecb9fee9a1e4e01027a5f3532cc47d160fe303d5a"
+     "75615f00bca2d070186d217af34b1337badbc55e6a6d6c3f6929e4c3405c8079"
+     "1d904ba8343822dff21ffae28a348975eafeb0734034ed5fa33d78bf2519e7cb"
+     "39b0c917e910f32f43f7849d07b36a2578370a2d101988ea91292f9087f28470"
+     "f58379453f93eb5152f87b19322feb3ac0393f4db6f9b5c6711a8aa6d2affe6a"
+     "8878226b9bda9a16c2639a85d86af1a4eac16e88522587afa368d745006ef476"
+     "1d4abd3ff9d32f7740f5b8c44fc5dd3e9625e8bde84315be58a865bc087d1714"
+     "93fcfa172aad04bd7f86323c67c661b8cfeeda044632d5e5c8d54f1a47c38e8b"
+     "b31e969329848ec0432a23850e1db997cf16c1b85845c73996f0d582e7403b27"
+     "88380a535b965f1172ced30e751f5abf31047f15eae17adf323ba415a9408617"
+     "87fd15a92096797894626d25d8f8a436b90ce8d97d499a98faea972944645fbd"
+     "e129ee166c2cd586fb0831c711fc49977a065360461ba9ac78786be822ab4338"
+     "c0350aed6dc98abdc329906a630b4cdf8ebb147cdf2a873e2648dfc0b904b2ab"
+     "5744f67c2f2f5bb2bfe40dd72e590c8255bbaa9441c957a7524530077bc244cc"
+     "c727910dd591caecd19c432ecc7afbcdecca1af23cd494bb60906aa613e7666a"
+     "65ee857bb301e7a1cbc0822aeccf0bfa1b4dfa7199a759ab7b7b0504885233b7"
+     "405654bde08b14bb90e4f8e6f900571f7c9827708ead86b13f6949566dde2065"
+     "ba3399d98232527210e96e5f44c78a9aeb1cb159c6cd6dfa4348f2e08215bf19"
+     default))
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
  '(display-time-mode t)
  '(grep-find-ignored-directories
-   '("SCCS" "RCS" "CVS" "MCVS" ".src" ".svn" ".git" ".hg" ".bzr" "_MTN" "_darcs" "{arch}" ".clj-kondo" ".shadow-cljs" "target" "node_modules"))
+   '("SCCS" "RCS" "CVS" "MCVS" ".src" ".svn" ".git" ".hg" ".bzr" "_MTN"
+     "_darcs" "{arch}" ".clj-kondo" ".shadow-cljs" "target"
+     "node_modules"))
+ '(ignored-local-variable-values
+   '((eval progn
+           (make-variable-buffer-local
+            'cider-jack-in-nrepl-middlewares)
+           (add-to-list 'cider-jack-in-nrepl-middlewares
+                        "shadow.cljs.devtools.server.nrepl/middleware"))))
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
@@ -947,37 +894,52 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
  '(org-modules
-   '(ol-bbdb ol-bibtex ol-doi ol-eww ol-gnus ol-info ol-irc ol-mhe ol-rmail ol-w3m))
+   '(ol-bbdb ol-bibtex ol-doi ol-eww ol-gnus ol-info ol-irc ol-mhe
+             ol-rmail ol-w3m))
  '(org-preview-latex-process-alist
-   '((dvipng :programs
-             ("latex" "dvipng")
-             :description "dvi > png" :message "you need to install the programs: latex and dvipng." :image-input-type "dvi" :image-output-type "png" :image-size-adjust
-             (1.0 . 1.0)
-             :latex-compiler
+   '((dvipng :programs ("latex" "dvipng") :description "dvi > png"
+             :message
+             "you need to install the programs: latex and dvipng."
+             :image-input-type "dvi" :image-output-type "png"
+             :image-size-adjust (1.0 . 1.0) :latex-compiler
              ("latex -interaction nonstopmode -output-directory %o %F")
-             :image-converter
-             ("dvipng -D %D -T tight -o %O %F")
+             :image-converter ("dvipng -D %D -T tight -o %O %F")
              :transparent-image-converter
              ("dvipng -D %D -T tight -bg Transparent -o %O %F"))
-     (dvisvgm :programs
-              ("latex" "dvisvgm")
-              :description "dvi > svg" :message "you need to install the programs: latex and dvisvgm." :image-input-type "dvi" :image-output-type "svg" :image-size-adjust
-              (1.7 . 1.5)
-              :latex-compiler
+     (dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg"
+              :message
+              "you need to install the programs: latex and dvisvgm."
+              :image-input-type "dvi" :image-output-type "svg"
+              :image-size-adjust (1.7 . 1.5) :latex-compiler
               ("latex -interaction nonstopmode -output-directory %o %f")
               :image-converter
               ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
-     (imagemagick :programs
-                  ("latex" "convert")
-                  :description "pdf > png" :message "you need to install the programs: latex and imagemagick." :image-input-type "pdf" :image-output-type "png" :image-size-adjust
-                  (1.0 . 1.0)
-                  :latex-compiler
+     (imagemagick :programs ("latex" "convert") :description
+                  "pdf > png" :message
+                  "you need to install the programs: latex and imagemagick."
+                  :image-input-type "pdf" :image-output-type "png"
+                  :image-size-adjust (1.0 . 1.0) :latex-compiler
                   ("pdflatex -interaction nonstopmode -output-directory %o %f")
                   :image-converter
                   ("convert -density %D -trim -antialias %F -quality 100 %O"))))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(scad-mode js2-refactor baser modus-themes projectile lsp-treemacs lsp-ui lsp-mode org-sidebar vundo with-editor helm-org-rifle magit-section popup request treemacs company-racer ripgrep helm-org quelpa quelpa-use-package org-download lua-mode german-holidays zig-mode use-package lsp-java calfw calfw-org bm abyss-theme anti-zenburn-theme flycheck-clj-kondo xref-js2 js2-mode cider-hydra org-clock-convenience org-clock-csv markdown-mode+ htmlize magit-todos magit-org-todos ido-ubiquitous magit-popup markdown-preview-mode paredit which-key racer cargo rust-mode git-gutter-fringe hideshowvis ido-completing-read+ markdown-mode smex rainbow-delimiters neotree hl-sexp expand-region company clj-refactor cider-eval-sexp-fu ace-window ace-jump-mode))
+   '(abyss-theme ace-jump-mode ace-window anti-zenburn-theme baser bm
+                 calfw calfw-org cargo cider-eval-sexp-fu cider-hydra
+                 clj-refactor company company-racer difftastic
+                 expand-region flycheck-clj-kondo german-holidays
+                 git-gutter-fringe helm-org helm-org-rifle hideshowvis
+                 hl-sexp htmlize ido-completing-read+ ido-ubiquitous
+                 js2-mode js2-refactor lsp-java lsp-mode lsp-treemacs
+                 lsp-ui lua-mode magit-difftastic magit-org-todos
+                 magit-popup magit-section magit-todos markdown-mode
+                 markdown-mode+ markdown-preview-mode modus-themes
+                 neotree org-clock-convenience org-clock-csv
+                 org-download org-sidebar org-super-links paredit
+                 popup projectile quelpa quelpa-use-package racer
+                 rainbow-delimiters request ripgrep rust-mode
+                 scad-mode smex treemacs use-package vundo which-key
+                 with-editor xref-js2 zig-mode))
  '(quelpa-update-melpa-p nil)
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
@@ -988,6 +950,10 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
      (org-export-html-style-include-default)))
  '(sp-base-key-bindings 'sp)
  '(speedbar-supported-extension-expressions
-   '(".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?" ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java" ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m" ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k" "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?"))
+   '(".org" ".[ch]\\(\\+\\+\\|pp\\|c\\|h\\|xx\\)?"
+     ".tex\\(i\\(nfo\\)?\\)?" ".el" ".emacs" ".l" ".lsp" ".p" ".java"
+     ".js" ".f\\(90\\|77\\|or\\)?" ".ad[abs]" ".p[lm]" ".tcl" ".m"
+     ".scm" ".pm" ".py" ".g" ".s?html" ".ma?k"
+     "[Mm]akefile\\(\\.in\\)?" ".clj[sc]?"))
  '(tool-bar-mode nil)
  '(xref-js2-ignored-dirs '("bower_components" "node_modules" "build")))
