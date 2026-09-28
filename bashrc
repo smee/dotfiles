@@ -102,7 +102,7 @@ shopt -s cdspell
 # CDPATH
 CDPATH='.'
 source ~/dotfiles/scripts/z.sh
-export PATH=~/bin:~/dotfiles/scripts:~/.cargo/bin:$PATH
+export PATH=~/bin:~/dotfiles/scripts:~/.cargo/bin:$PATH:~/.local/bin
 # ignore ls, bg, fg, exit and all commands that start with a space
 export HISTIGNORE="&:ls:ll:[bf]g:exit:[ \t]*:z *"
 export HISTFILESIZE=10000000

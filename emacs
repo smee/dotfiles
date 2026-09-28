@@ -49,7 +49,7 @@ Return a list of installed packages or nil for every skipped package."
 			  'expand-region
 			  'neotree
 			  'projectile
-			  'magit 'magit-todos
+			  'magit
 			  'which-key
 			  'ido
 			  'ido-completing-read+
@@ -166,15 +166,9 @@ STR is current-kill if unspecified.
 (use-package magit-difftastic
   :after magit
   :ensure t
-  :quelpa (magit-difftastic :repo "rschmukler/magit-difftastic" :fetcher github :commit "1e2a1f60288341893a9d21d8a900739be9f34e40")
+  :quelpa (magit-difftastic :repo "rschmukler/magit-difftastic" :fetcher github :commit "33dbd1e5ad2dbbea78bf97ff845a52787d7a9191")
   :init (magit-difftastic-mode +1))
 
-(use-package magit-todos
-  :init
-  (magit-todos-mode 1)
-  :custom
-  (magit-todos-require-colon nil)
-  (magit-todos-keyword-suffix "" nil nil "do not use any suffixes"))
 
 (use-package ido
   :init
@@ -638,8 +632,13 @@ nothing happens."
   ;; At the very first, check if the current buffer has a file name. If not, mode needs to be
   ;; PROMPT with DEFAULT_FOLDER
   (if (null (buffer-file-name)) (setq PROMPT t))
-  (setq DEFAULT_FOLDER "c:/Dropbox/home/sdienst/org/img")
-  (setq DEFAULT_FOLDER_WSL "/home/sdienst/org/img")
+  (setq YEAR (format-time-string "%Y"))
+  (setq DEFAULT_FOLDER (concat "c:/Dropbox/home/sdienst/org/img"  "/" YEAR))
+  (setq DEFAULT_FOLDER_WSL (concat "/home/sdienst/org/img"  "/" YEAR))
+  (unless (file-directory-p DEFAULT_FOLDER_WSL)
+    (make-directory DEFAULT_FOLDER_WSL t))
+  (unless (file-directory-p DEFAULT_FOLDER)
+    (make-directory DEFAULT_FOLDER t))
   (setq filename (format-time-string "%Y%m%d_%H%M%S.png"))
   (suspend-frame)
   ;; (shell-command "/mnt/c/Windows/System32/cmd.exe /C start ms-screenclip:")
@@ -752,7 +751,7 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(cider-lein-parameters "trampoline repl :headless")
  '(cider-spinner-type 'vertical-breathing)
  '(column-number-mode t)
- '(company-idle-delay 2)
+ '(company-idle-delay 2 t)
  '(connection-local-criteria-alist
    '(((:application eshell) eshell-connection-default-profile)
      ((:application tramp)
@@ -831,7 +830,8 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
       (path-separator . ":") (null-device . "/dev/null"))))
  '(custom-enabled-themes '(modus-operandi))
  '(custom-safe-themes
-   '("8fbf2d585f1138caaafa9e523fa3a20614c1d1dcc6002c9808c3e40028e21df4"
+   '("10e330880269244ae45ae9e02fe6f55766da9e15036e7c7f07d7ce228195deb5"
+     "8fbf2d585f1138caaafa9e523fa3a20614c1d1dcc6002c9808c3e40028e21df4"
      "c8b84cff70a0e7a26e1a67a58a5066ff3b28bb2fd0ded47e71cc94da52ddd03a"
      "488b82a8d9ace0aea8a6825db144e3c65c4f1ef3e090b618bf311d9cdb513322"
      "7e98dc1aa7f5db0557691da690c38d55e83ddd33c6d268205d66e430d57fb982"
@@ -890,7 +890,6 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(initial-buffer-choice t)
- '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$" ".*\\.mtc.*$"))
  '(neo-window-fixed-size nil)
  '(org-modules
@@ -924,22 +923,13 @@ Clock   In/out^     ^Edit^   ^Summary     (_?_)
                   ("convert -density %D -trim -antialias %F -quality 100 %O"))))
  '(package-check-signature nil)
  '(package-selected-packages
-   '(abyss-theme ace-jump-mode ace-window anti-zenburn-theme baser bm
-                 calfw calfw-org cargo cider-eval-sexp-fu cider-hydra
-                 clj-refactor company company-racer difftastic
-                 expand-region flycheck-clj-kondo german-holidays
-                 git-gutter-fringe helm-org helm-org-rifle hideshowvis
-                 hl-sexp htmlize ido-completing-read+ ido-ubiquitous
-                 js2-mode js2-refactor lsp-java lsp-mode lsp-treemacs
-                 lsp-ui lua-mode magit-difftastic magit-org-todos
-                 magit-popup magit-section magit-todos markdown-mode
-                 markdown-mode+ markdown-preview-mode modus-themes
-                 neotree org-clock-convenience org-clock-csv
-                 org-download org-sidebar org-super-links paredit
-                 popup projectile quelpa quelpa-use-package racer
-                 rainbow-delimiters request ripgrep rust-mode
-                 scad-mode smex treemacs use-package vundo which-key
-                 with-editor xref-js2 zig-mode))
+   '(ace-jump-mode baser bm clj-refactor company expand-region
+                   flycheck-clj-kondo german-holidays helm-org
+                   helm-org-rifle hl-sexp ido-completing-read+
+                   js2-refactor lsp-treemacs lsp-ui magit-difftastic
+                   modus-themes neotree org-super-links projectile
+                   quelpa-use-package racer rainbow-delimiters
+                   scad-mode smex which-key xref-js2))
  '(quelpa-update-melpa-p nil)
  '(racer-rust-src-path
    "/home/steffen/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src")
